@@ -7,7 +7,6 @@ return [
     |--------------------------------------------------------------------------
     |
     | Parámetros de conexión al Asterisk Manager Interface (AMI) de FreePBX.
-    | En desarrollo, activar AMI_DRY_RUN=true para simular sin conectar.
     |
     */
 
@@ -20,13 +19,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Modo Dry Run
+    | Modo Dry Run (Simulación)
     |--------------------------------------------------------------------------
     |
-    | Si es true, las acciones AMI (QueueAdd/QueueRemove) se SIMULAN:
-    | se registran en bitacora_ami con status "DRY_RUN" pero NO se envía
-    | ningún comando a FreePBX. Ideal para desarrollo y pruebas.
+    | filter_var asegura que si en el .env pones "false" o "true" como texto,
+    | PHP lo interprete estrictamente como un booleano real.
     |
     */
-    'dry_run'         => env('AMI_DRY_RUN', false),
+    'dry_run'         => filter_var(env('AMI_DRY_RUN', false), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Umbral de Calidad (Productividad)
+    |--------------------------------------------------------------------------
+    */
+    'short_call_threshold' => (int) env('AMI_SHORT_CALL_THRESHOLD', 10),
 ];

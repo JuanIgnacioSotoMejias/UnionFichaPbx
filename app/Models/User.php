@@ -14,14 +14,22 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Roles disponibles en el sistema.
+     */
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
         'name',
+        'cedula',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -45,5 +53,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Verifica si el usuario tiene rol de administrador.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
     }
 }

@@ -64,6 +64,25 @@ return [
             ]) : [],
         ],
 
+        'freepbx' => [
+            'driver'    => 'mysql',
+            'url'       => env('FREEPBX_DB_URL'),
+            'host'      => env('FREEPBX_DB_HOST', '127.0.0.1'),
+            'port'      => env('FREEPBX_DB_PORT', '3306'),
+            'database'  => env('FREEPBX_DB_DATABASE', 'asteriskcdrdb'),
+            'username'  => env('FREEPBX_DB_USERNAME', 'root'),
+            'password'  => env('FREEPBX_DB_PASSWORD', ''),
+            'unix_socket' => env('FREEPBX_DB_SOCKET', ''),
+            'charset'   => env('FREEPBX_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('FREEPBX_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix'    => '',
+            'strict'    => false,
+            'engine'    => null,
+            'options'   => extension_loaded('pdo_mysql') ? array_filter([
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

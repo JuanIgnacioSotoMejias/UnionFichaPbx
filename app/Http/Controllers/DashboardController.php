@@ -2,72 +2,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BitacoraAmi;
-use App\Models\HistorialAcceso;
-use App\Models\LogApiReceptor;
-use App\Models\OperadorConfig;
+use App\Services\DashboardService;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    /**
+     * Carga el panel de control principal cruzando datos locales y remotos a través del servicio.
+     */
+    public function index(DashboardService $dashboardService, \App\Services\TelemetryService $telemetryService): View
     {
-        // Estado de conexión AMI
-        $dryRun = config('ami.dry_run', false);
-        $amiConectado = false;
-        $amiMensaje   = 'Modo DRY_RUN activo';
+        $data = $dashboardService->getDashboardData();
 
-        if (!$dryRun) {
-            $socket = @fsockopen(
-                config('ami.host'),
-                config('ami.port'),
-                $errno, $errstr,
-                (int) config('ami.connect_timeout', 3)
-            );
-            if ($socket) {
-                fclose($socket);
-                $amiConectado = true;
-                $amiMensaje   = 'Conectado a ' . config('ami.host') . ':' . config('ami.port');
-            } else {
-                $amiMensaje = "Sin conexión: {$errstr}";
-            }
+        // 1. Obtener la extensión y el ID local dinámicamente del operador autenticado
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $extension = $user->operador->extension ?? null; 
+        $operadorId = $user->operador->id ?? $user->id; 
+
+        // Variables iniciales
+        $aht = 0;
+        $ocupacion = 0.0;
+
+        // 2. Si el usuario tiene una extensión asignada, extraemos telemetría
+        if ($extension) {
+            $aht = $telemetryService->getOperatorAHT($extension);
+            $ocupacion = $telemetryService->getOperatorOccupation($extension, $operadorId);
         }
 
-        // Métricas generales
-        $totalOperadores   = OperadorConfig::count();
-        $operadoresActivos = OperadorConfig::where('is_active', true)->count();
-        $totalEventosHoy   = HistorialAcceso::whereDate('created_at', today())->count();
-        $erroresHoy        = LogApiReceptor::where('codigo_respuesta', '>=', 400)
-                                ->whereDate('created_at', today())->count();
+        // 3. Definir estilos institucionales dinámicamente
+        if ($ocupacion < 70) {
+            $colorOcupacion = 'text-slate-400';
+            $bgOcupacion = 'bg-slate-300';
+        } elseif ($ocupacion >= 70 && $ocupacion <= 95) {
+            $colorOcupacion = 'text-emerald-600';
+            $bgOcupacion = 'bg-emerald-500';
+        } else {
+            $colorOcupacion = 'text-red-500';
+            $bgOcupacion = 'bg-red-500';
+        }
 
-        // Últimas actividades
-        $ultimosEventos = HistorialAcceso::with('operador')
-            ->latest('created_at')
-            ->take(10)
-            ->get();
-
-        // Últimos errores AMI
-        $ultimosErroresAmi = BitacoraAmi::where('status', 'ERROR')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // Operadores con estado
-        $operadores = OperadorConfig::orderByDesc('is_active')
-            ->orderBy('nombre_operador')
-            ->get();
-
-        return view('dashboard', compact(
-            'dryRun',
-            'amiConectado',
-            'amiMensaje',
-            'totalOperadores',
-            'operadoresActivos',
-            'totalEventosHoy',
-            'erroresHoy',
-            'ultimosEventos',
-            'ultimosErroresAmi',
-            'operadores',
+        $data = array_merge($data, compact(
+            'aht', 
+            'ocupacion', 
+            'colorOcupacion', 
+            'bgOcupacion', 
+            'extension'
         ));
+
+        return view('dashboard', $data);
     }
 }

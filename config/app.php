@@ -134,5 +134,13 @@ return [
     */
     'receptor_api_token' => env('RECEPTOR_API_TOKEN', ''),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Seguridad de la API Receptor
+    |--------------------------------------------------------------------------
+    */
+    'receptor_allowed_ips' => env('RECEPTOR_ALLOWED_IPS', ''),
+    'receptor_rate_limit'  => (int) env('RECEPTOR_RATE_LIMIT', 60),
+
 ];
 

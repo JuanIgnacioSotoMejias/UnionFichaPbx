@@ -15,6 +15,7 @@ class OperadorConfig extends Model
         'extension',
         'queue_name',
         'is_active',
+        'grupo_horario',
     ];
 
     protected $casts = [
@@ -24,6 +25,14 @@ class OperadorConfig extends Model
     public function historial(): HasMany
     {
         return $this->hasMany(HistorialAcceso::class, 'operador_config_id');
+    }
+
+    /**
+     * Extensión actualmente asignada a este operador.
+     */
+    public function extensionAsignada(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Extension::class, 'operador_config_id');
     }
 
     /**

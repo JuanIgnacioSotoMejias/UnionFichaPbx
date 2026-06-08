@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Extension;
 use App\Models\OperadorConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -9,63 +10,43 @@ use Illuminate\View\View;
 
 class OperadorController extends Controller
 {
+    /**
+     * Muestra la lista de operadores (Módulo de Personal)
+     */
     public function index(): View
     {
-        $operadores = OperadorConfig::withCount('historial')
-            ->orderBy('nombre_operador')
-            ->paginate(20);
+        $operadores = OperadorConfig::orderBy('nombre_operador')->paginate(15);
+        $extensionesLibres = Extension::where('numero', 'like', '8%')
+            ->where('estado', 'libre')
+            ->orderBy('numero')
+            ->get();
 
-        return view('operadores.index', compact('operadores'));
+        return view('operadores.index', compact('operadores', 'extensionesLibres'));
     }
 
-    public function create(): View
+    /**
+     * Actualiza la extensión y/o el grupo horario de un operador
+     */
+    public function update(\App\Http\Requests\UpdateOperadorRequest $request, OperadorConfig $operador): RedirectResponse
     {
-        return view('operadores.create');
-    }
+        $newExtension = $request->input('extension');
+        $grupoHorario = $request->input('grupo_horario');
 
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'ficha_username'  => ['required', 'string', 'max:50', 'unique:operadores_config,ficha_username'],
-            'nombre_operador' => ['required', 'string', 'max:100'],
-            'extension'       => ['required', 'string', 'max:10'],
-            'queue_name'      => ['required', 'string', 'max:20'],
+        // Si se seleccionó una extensión y NO se seleccionó un grupo manualmente, lo hereda de la extensión.
+        if ($newExtension !== '0000' && empty($grupoHorario)) {
+            $extNew = Extension::where('numero', $newExtension)->first();
+            if ($extNew) {
+                $grupoHorario = $extNew->grupo_horario;
+            }
+        }
+
+        $operador->update([
+            'extension'     => $newExtension,
+            'grupo_horario' => $grupoHorario,
+            'is_active'     => $request->input('is_active'),
         ]);
 
-        OperadorConfig::create($validated);
-
-        return redirect()->route('operadores.index')
-            ->with('success', "Operador '{$validated['nombre_operador']}' registrado correctamente.");
-    }
-
-    public function edit(OperadorConfig $operador): View
-    {
-        $historial = $operador->historial()->latest('created_at')->take(20)->get();
-        return view('operadores.edit', compact('operador', 'historial'));
-    }
-
-    public function update(Request $request, OperadorConfig $operador): RedirectResponse
-    {
-        $validated = $request->validate([
-            'ficha_username'  => ['required', 'string', 'max:50', "unique:operadores_config,ficha_username,{$operador->id}"],
-            'nombre_operador' => ['required', 'string', 'max:100'],
-            'extension'       => ['required', 'string', 'max:10'],
-            'queue_name'      => ['required', 'string', 'max:20'],
-        ]);
-
-        $operador->update($validated);
-
-        return redirect()->route('operadores.index')
-            ->with('success', "Operador '{$operador->nombre_operador}' actualizado.");
-    }
-
-    public function destroy(OperadorConfig $operador): RedirectResponse
-    {
-        $nombre = $operador->nombre_operador;
-        $operador->delete();
-
-        return redirect()->route('operadores.index')
-            ->with('success', "Operador '{$nombre}' eliminado.");
+        return redirect()->route('operadores.index')->with('success', 'Operador actualizado exitosamente.');
     }
 
     /**

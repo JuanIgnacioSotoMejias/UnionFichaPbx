@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -20,11 +21,13 @@ class UserController extends Controller
 
     public function create(): View
     {
+        Gate::authorize('manage-system');
         return view('users.create');
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
+        Gate::authorize('manage-system');
         $validated = $request->validated();
 
         User::create([
@@ -40,11 +43,13 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
+        Gate::authorize('manage-system');
         return view('users.edit', compact('user'));
     }
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        Gate::authorize('manage-system');
         $validated = $request->validated();
 
         $user->name = $validated['name'];
@@ -63,6 +68,7 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        Gate::authorize('manage-system');
         if (auth()->id() === $user->id) {
             return redirect()->route('users.index')->with('error', 'No puedes alterar el estado de tu propio usuario.');
         }

@@ -7,6 +7,7 @@ use App\Models\OperadorConfig;
 use App\Services\AmiService;
 use App\Services\FreePbxService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Gate;
 
@@ -48,7 +49,7 @@ class ExtensionController extends Controller
             ->orderBy('numero')
             ->paginate(5, ['*'], 'page_inactivas');
 
-        // Consultar estado real de cada extensión vía AMI
+        // Consultar estado real de cada extensión vía AMI — Cacheado 10 segundos
         $numerosOp = $extensionsOperadores->pluck('numero')->toArray();
         $numerosDesp = $extensionsDespachadores->pluck('numero')->toArray();
         $numerosInt = $extensionsInternos->pluck('numero')->toArray();
@@ -58,7 +59,10 @@ class ExtensionController extends Controller
         $amiError = null;
 
         try {
-            $estadosAmi = $this->ami->getExtensionsStatuses($numeros);
+            $cacheKey = 'extensions:ami_statuses:' . md5(implode(',', $numeros));
+            $estadosAmi = Cache::remember($cacheKey, 10, function () use ($numeros) {
+                return $this->ami->getExtensionsStatuses($numeros);
+            });
         } catch (\Throwable $e) {
             Log::warning('[Extensions] No se pudieron obtener estados AMI: ' . $e->getMessage());
             $amiError = 'Asterisk temporalmente inalcanzable';
@@ -70,7 +74,13 @@ class ExtensionController extends Controller
             ->orderBy('nombre_operador')
             ->get();
 
-        $totalExtensions = Extension::all(); // Solo para las estadísticas visuales
+        // Estadísticas visuales calculadas con queries COUNT selectivos (no carga todos los registros)
+        $totalExtensions = (object) [
+            'total'    => Extension::count(),
+            'libres'   => Extension::where('estado', 'libre')->count(),
+            'en_uso'   => Extension::where('estado', 'en_uso')->count(),
+            'inactiva' => Extension::where('estado', 'inactiva')->count(),
+        ];
 
         return view('extensions.index', compact(
             'extensionsOperadores', 

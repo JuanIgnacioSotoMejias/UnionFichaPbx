@@ -63,13 +63,21 @@
                             <form action="{{ route('operadores.update', $op->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div class="bg-[#1e293b] px-6 py-4 flex justify-between items-center">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                        </div>
+                                        <h3 class="text-white font-black uppercase italic tracking-tighter">Editar Operador: {{ $op->nombre_operador }}</h3>
+                                    </div>
+                                    <button type="button" @click="editing_{{ $op->id }} = false" class="text-white/40 hover:text-white transition">
+                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <div class="bg-white p-6">
                                     <div class="sm:flex sm:items-start">
-                                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                            <h3 class="text-lg leading-6 font-black text-slate-800 uppercase tracking-tight">
-                                                Editar Operador: {{ $op->nombre_operador }}
-                                            </h3>
-                                            <div class="mt-4 space-y-4">
+                                        <div class="text-left w-full">
+                                            <div class="space-y-4">
                                                 {{-- Multi-select de Extensiones --}}
                                                 <div>
                                                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Extensiones Asignadas (CTRL+Click para múltiple)</label>
@@ -120,12 +128,13 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                    <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-lg shadow-blue-200 px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm transition uppercase tracking-widest font-bold">
-                                        Guardar
-                                    </button>
-                                    <button type="button" @click="editing_{{ $op->id }} = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm uppercase tracking-widest font-bold">
+                                <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                                    <button type="button" @click="editing_{{ $op->id }} = false" class="px-4 py-2 text-xs font-bold text-slate-500 uppercase hover:text-slate-800 transition">
                                         Cancelar
+                                    </button>
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-black uppercase text-xs shadow-lg shadow-blue-200 transition-all hover:scale-[1.02] flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        Guardar Cambios
                                     </button>
                                 </div>
                             </form>

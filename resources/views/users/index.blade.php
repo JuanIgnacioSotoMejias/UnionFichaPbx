@@ -32,10 +32,12 @@
                 <h3 class="font-black text-white uppercase italic tracking-tighter">Usuarios Administradores</h3>
                 
                 {{-- Botón que activa el modal --}}
+                @can('manage-system')
                 <button @click="showCreateModal = true"
                    class="text-xs bg-green-600 hover:bg-green-700 text-white font-black uppercase px-4 py-2 rounded-lg transition shadow-md hover:scale-[1.02] active:scale-[0.98]">
                     + Nuevo Usuario
                 </button>
+                @endcan
             </div>
 
             <div class="overflow-x-auto">
@@ -48,7 +50,9 @@
                             <th class="px-6 py-4 text-left">Auditoría de Sesión</th>
                             @endcan
                             <th class="px-6 py-4 text-center">Rol</th>
+                            @can('manage-system')
                             <th class="px-6 py-4 text-center">Acciones</th>
+                            @endcan
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -73,6 +77,7 @@
                                 </span>
                                 @endif
                             </td>
+                            @can('manage-system')
                             <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center items-center gap-2">
                                     {{-- Bloqueo de Super Administrador (ID 1) --}}
@@ -95,6 +100,7 @@
                                     @endif
                                 </div>
                             </td>
+                            @endcan
                         </tr>
                         @endforeach
                     </tbody>
@@ -121,13 +127,23 @@
         {{-- Contenido del Modal --}}
         <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-lg w-full z-10 transform transition-all border border-slate-300">
             
-            {{-- Encabezado dinámico --}}
-            <div :class="confirming ? 'bg-amber-600' : 'bg-slate-800'" class="px-6 py-4 flex justify-between items-center transition-colors duration-300">
-                <h3 class="text-white font-black uppercase italic tracking-tighter">
-                    <span x-show="!confirming">Registrar Nuevo Usuario</span>
-                    <span x-show="confirming">⚠️ Confirmar Registro</span>
-                </h3>
-                <button @click="showCreateModal = false; confirming = false" class="text-white/50 hover:text-white">
+            {{-- Encabezado dinámico corporativo --}}
+            <div :class="confirming ? 'bg-amber-600' : 'bg-[#1e293b]'" class="px-6 py-4 flex justify-between items-center transition-colors duration-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-300" :class="confirming ? 'bg-white/20' : 'bg-blue-500/20'">
+                        <template x-if="!confirming">
+                            <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                        </template>
+                        <template x-if="confirming">
+                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </template>
+                    </div>
+                    <h3 class="text-white font-black uppercase italic tracking-tighter">
+                        <span x-show="!confirming">Registrar Nuevo Usuario</span>
+                        <span x-show="confirming">Confirmar Registro</span>
+                    </h3>
+                </div>
+                <button @click="showCreateModal = false; confirming = false" class="text-white/40 hover:text-white transition">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>

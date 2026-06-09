@@ -194,8 +194,8 @@
              ═══════════════════════════════════════════════════════════════ --}}
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {{-- Bloque Izquierdo: Operadores de Turno (8 Columnas) --}}
-            <div id="tabla-operadores-container" class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_-5px_rgba(15,23,42,0.4)] overflow-hidden">
+            {{-- Bloque Izquierdo: Operadores de Turno (7 Columnas) --}}
+            <div id="tabla-operadores-container" class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_-5px_rgba(15,23,42,0.4)] overflow-hidden">
                 <div class="bg-slate-900 px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-2">
                         <span class="w-3 h-3 {{ $amiConectado ? 'bg-green-500 animate-pulse' : 'bg-red-500' }} rounded-full"></span>
@@ -220,20 +220,20 @@
                     <table class="min-w-full text-left border-collapse">
                         <thead class="bg-slate-900">
                             <tr class="text-white text-sm uppercase font-semibold tracking-wider">
-                                <th class="px-6 py-3 font-bold">Datos del Operador</th>
-                                <th class="px-6 py-3 font-bold text-center">Extensión</th>
+                                <th class="px-4 py-3 font-bold">Datos del Operador</th>
+                                <th class="px-4 py-3 font-bold text-center">Extensión</th>
                                 @if(config('app.metrics_enabled'))
-                                <th class="px-6 py-3 font-bold text-center">AHT</th>
-                                <th class="px-6 py-3 font-bold text-center">Ocupación</th>
+                                <th class="px-4 py-3 font-bold text-center">AHT</th>
+                                <th class="px-4 py-3 font-bold text-center">Ocupación</th>
                                 @endif
-                                <th class="px-6 py-3 font-bold text-center">Estado Turno</th>
-                                <th class="px-6 py-3 font-bold text-right">Estado FreePBX</th>
+                                <th class="px-4 py-3 font-bold text-center">Estado Turno</th>
+                                <th class="px-4 py-3 font-bold text-right">Estado FreePBX</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($operadores as $op)
                             <tr class="hover:bg-slate-100 transition even:bg-gray-50 odd:bg-white">
-                                <td class="px-6 py-4">
+                                <td class="px-4 py-3">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 uppercase">
                                             {{ substr($op->nombre_operador, 0, 2) }}
@@ -244,7 +244,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-4 py-3 text-center">
                                     <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono text-sm font-bold border border-slate-200">
                                         {{ $op->extension }}
                                     </span>
@@ -268,12 +268,12 @@
                                     }
                                 @endphp
                                 @if(config('app.metrics_enabled'))
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-4 py-3 text-center">
                                     <span class="text-sm font-bold {{ $ahtSeconds > 300 ? 'text-red-500' : 'text-slate-600' }}">
                                         {{ $ahtFormatted }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-4 py-3 text-center">
                                     <div class="flex items-center gap-2 justify-center">
                                         <div class="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                             <div class="{{ $colorOcupacion }} h-full transition-all duration-500" style="width: {{ $ocupacion }}%"></div>
@@ -282,7 +282,7 @@
                                     </div>
                                 </td>
                                 @endif
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-4 py-3 text-center">
                                     @php
                                         $estadoTurno = $scheduleService->getCurrentState($op);
                                         $labelTurno = $scheduleService->getStateLabel($estadoTurno);
@@ -291,7 +291,7 @@
                                         {{ $labelTurno['text'] }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right">
+                                <td class="px-4 py-3 text-right">
                                     @php
                                         $estado = strtolower($op->estatus_pbx ?? 'offline');
                                         
@@ -325,14 +325,16 @@
                     </table>
                 </div>
                 @if($operadores instanceof \Illuminate\Pagination\LengthAwarePaginator && $operadores->hasPages())
-                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
-                        {{ $operadores->appends(request()->query())->links() }}
+                    <div class="px-4 py-3 border-t border-slate-200 bg-slate-50">
+                        <div class="flex flex-row flex-wrap items-center justify-between gap-2">
+                            {{ $operadores->appends(request()->query())->links() }}
+                        </div>
                     </div>
                 @endif
             </div>
 
-            {{-- Bloque Derecho: Últimos Accesos (4 Columnas) --}}
-            <div id="live-feed-container" class="lg:col-span-4 bg-white rounded-2xl shadow-[0_4px_20px_-5px_rgba(15,23,42,0.4)] border border-slate-200 overflow-hidden self-stretch flex flex-col">
+            {{-- Bloque Derecho: Últimos Accesos (5 Columnas) --}}
+            <div id="live-feed-container" class="lg:col-span-5 bg-white rounded-2xl shadow-[0_4px_20px_-5px_rgba(15,23,42,0.4)] border border-slate-200 overflow-hidden self-stretch flex flex-col">
                 <div class="bg-slate-900 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -341,7 +343,7 @@
                     <span class="text-[9px] font-mono text-blue-300 uppercase tracking-widest">Live Feed</span>
                 </div>
 
-                <div class="p-5 overflow-hidden space-y-3">
+                <div class="p-5 overflow-hidden space-y-3 flex-1">
                     @forelse($ultimosEventos as $acceso)
                     <div class="flex items-start gap-3 p-3 rounded-xl {{ $acceso->evento === 'LOGOUT' ? 'bg-amber-50 border border-amber-100' : 'bg-emerald-50 border border-emerald-100' }}">
                         <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center {{ $acceso->evento === 'LOGOUT' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-700' }}">
@@ -381,8 +383,10 @@
                     @endforelse
                 </div>
                 @if($ultimosEventos instanceof \Illuminate\Pagination\LengthAwarePaginator && $ultimosEventos->hasPages())
-                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
-                        {{ $ultimosEventos->appends(request()->query())->links() }}
+                    <div class="px-4 py-3 border-t border-slate-200 bg-slate-50 mt-auto">
+                        <div class="flex flex-row flex-wrap items-center justify-between gap-2">
+                            {{ $ultimosEventos->appends(request()->query())->links() }}
+                        </div>
                     </div>
                 @endif
             </div>

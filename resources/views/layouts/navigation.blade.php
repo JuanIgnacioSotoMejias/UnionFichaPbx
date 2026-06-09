@@ -58,6 +58,18 @@
             </a>
         @endif
 
+        @php
+            $isReportes = request()->routeIs('reportes.*');
+        @endphp
+        <a href="{{ route('reportes.index') }}" 
+           class="{{ $isReportes 
+                    ? 'flex items-center justify-center py-2.5 px-4 bg-gray-100 text-gray-900 border-b border-slate-700 font-semibold rounded-l-lg -mr-px relative z-10 shadow-sm' 
+                    : 'flex items-center justify-center py-2.5 px-4 text-slate-300 hover:bg-slate-800 border-b border-slate-700/50 rounded-l-lg transition-colors' }}">
+            <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span class="font-bold text-sm uppercase">Reportes</span>
+        </a>
+
+
         {{-- Botón para ver API colapsado --}}
         <button @click="$dispatch('open-modal', 'api-docs')" class="w-full flex items-center justify-center py-2.5 px-4 text-slate-300 hover:bg-slate-800 border-b border-slate-700/50 rounded-l-lg transition-colors">
             <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>

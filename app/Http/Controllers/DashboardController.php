@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -23,10 +24,17 @@ class DashboardController extends Controller
         $aht = 0;
         $ocupacion = 0.0;
 
-        // 2. Si el usuario tiene una extensión asignada, extraemos telemetría
+        // 2. Si el usuario tiene una extensión asignada, extraemos telemetría — Cacheada 30s
         if ($extension) {
-            $aht = $telemetryService->getOperatorAHT($extension);
-            $ocupacion = $telemetryService->getOperatorOccupation($extension, $operadorId);
+            $cacheKey = 'dashboard:telemetry:' . $extension . ':' . $operadorId;
+            $telemetria = Cache::remember($cacheKey, 30, function () use ($telemetryService, $extension, $operadorId) {
+                return [
+                    'aht'       => $telemetryService->getOperatorAHT($extension),
+                    'ocupacion' => $telemetryService->getOperatorOccupation($extension, $operadorId),
+                ];
+            });
+            $aht = $telemetria['aht'];
+            $ocupacion = $telemetria['ocupacion'];
         }
 
         // 3. Definir estilos institucionales dinámicamente

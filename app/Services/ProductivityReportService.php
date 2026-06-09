@@ -73,24 +73,85 @@ class ProductivityReportService
             default => $today->copy()->endOfDay()
         };
         
-        $telemetryService = app(TelemetryService::class);
-        
-        return OperadorConfig::withCount(['historial as logins_count' => function($q) use ($from, $to) {
+        // Eager load historial count en una sola query
+        $operadores = OperadorConfig::withCount(['historial as logins_count' => function($q) use ($from, $to) {
                 $q->where('evento', 'LOGIN')->whereBetween('created_at', [$from, $to]);
             }])
+            ->get();
+
+        // Batch: obtener alertas count para todos los operadores en una sola query
+        $alertasCounts = DB::table('alertas_productividad')
+            ->whereIn('operador_config_id', $operadores->pluck('id'))
+            ->whereBetween('created_at', [$from, $to])
+            ->selectRaw('operador_config_id, COUNT(*) as total')
+            ->groupBy('operador_config_id')
+            ->pluck('total', 'operador_config_id');
+
+        // Batch: obtener métricas CDR para todas las extensiones en una sola query
+        $extensiones = $operadores->pluck('extension')->filter()->unique()->values()->toArray();
+        $cdrMetrics = [];
+        
+        if (!empty($extensiones)) {
+            try {
+                $cdrMetrics = DB::connection('freepbx')->table('cdr')
+                    ->where('disposition', 'ANSWERED')
+                    ->whereBetween('calldate', [$from, $to])
+                    ->where(function ($query) use ($extensiones) {
+                        $query->whereIn('src', $extensiones)
+                              ->orWhereIn('dst', $extensiones);
+                    })
+                    ->selectRaw("
+                        CASE 
+                            WHEN src IN ('" . implode("','", $extensiones) . "') THEN src 
+                            ELSE dst 
+                        END as ext,
+                        COUNT(*) as total_llamadas, 
+                        SUM(billsec) as total_hablado
+                    ")
+                    ->groupByRaw("CASE WHEN src IN ('" . implode("','", $extensiones) . "') THEN src ELSE dst END")
+                    ->get()
+                    ->keyBy('ext');
+            } catch (\Exception $e) {
+                $cdrMetrics = collect();
+            }
+        } else {
+            $cdrMetrics = collect();
+        }
+
+        // Batch: obtener sesiones de todos los operadores en una sola query
+        $allSessions = OperadorSession::whereIn('operador_config_id', $operadores->pluck('id'))
+            ->whereBetween('fecha_inicio', [$from, $to])
             ->get()
-            ->map(function($op) use ($from, $to, $telemetryService) {
-                $metrics = $telemetryService->calculateMetrics($op->id, $op->extension ?? '', $from, $to);
-                
-                return [
-                    'id' => $op->id,
-                    'nombre' => $op->nombre_operador,
-                    'extension' => $op->extension,
-                    'aht' => $metrics['aht'],
-                    'ocupacion' => $metrics['ocupacion'],
-                    'alertas_count' => AlertaProductividad::where('operador_config_id', $op->id)->whereBetween('created_at', [$from, $to])->count(),
-                ];
-            })
-            ->toArray();
+            ->groupBy('operador_config_id');
+
+        return $operadores->map(function($op) use ($from, $to, $cdrMetrics, $allSessions, $alertasCounts) {
+            $ext = $op->extension ?? '';
+            $cdr = $cdrMetrics[$ext] ?? null;
+            
+            $totalLlamadas = $cdr->total_llamadas ?? 0;
+            $totalHablado = $cdr->total_hablado ?? 0;
+            $aht = $totalLlamadas > 0 ? round($totalHablado / $totalLlamadas, 1) : 0;
+
+            // Calcular ocupación desde sesiones en batch
+            $sessions = $allSessions[$op->id] ?? collect();
+            $totalSessionSeconds = $sessions->sum(function($session) {
+                $end = $session->fecha_fin ? Carbon::parse($session->fecha_fin) : Carbon::now();
+                return Carbon::parse($session->fecha_inicio)->diffInSeconds($end);
+            });
+
+            $ocupacion = 0;
+            if ($totalSessionSeconds > 0) {
+                $ocupacion = round(min(100, max(0, ($totalHablado / $totalSessionSeconds) * 100)), 1);
+            }
+
+            return [
+                'id' => $op->id,
+                'nombre' => $op->nombre_operador,
+                'extension' => $op->extension,
+                'aht' => $aht,
+                'ocupacion' => $ocupacion,
+                'alertas_count' => $alertasCounts[$op->id] ?? 0,
+            ];
+        })->toArray();
     }
 }

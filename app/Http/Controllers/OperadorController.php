@@ -16,8 +16,8 @@ class OperadorController extends Controller
      */
     public function index(): View
     {
-        // Operadores sin ninguna extensión (Disponibles)
-        $operadoresDisponibles = OperadorConfig::doesntHave('extensiones')->orderBy('nombre_operador')->get();
+        // Operadores sin ninguna extensión (Disponibles) — Con eager loading
+        $operadoresDisponibles = OperadorConfig::with('extensiones')->doesntHave('extensiones')->orderBy('nombre_operador')->get();
         
         // Extensiones con sus operadores asignados
         $extensionesConOperadores = Extension::with(['operadores' => function ($q) {
@@ -50,16 +50,22 @@ class OperadorController extends Controller
             }
         }
 
+        // Obtener extensiones previas antes del sync para recalcular
+        $previousExtIds = $operador->extensiones()->pluck('extensions.id')->toArray();
+
         $extIds = Extension::whereIn('numero', $extensionesRequest)->pluck('id')->toArray();
         $operador->extensiones()->sync($extIds);
 
-        // Recalcular estado de las extensiones (en_uso / libre)
-        Extension::all()->each(function ($e) {
-            $estado = $e->operadores()->count() > 0 ? 'en_uso' : 'libre';
-            if ($e->estado !== $estado) {
-                $e->update(['estado' => $estado]);
-            }
-        });
+        // Recalcular estado solo de las extensiones afectadas (previas + nuevas)
+        $affectedIds = array_unique(array_merge($previousExtIds, $extIds));
+        if (!empty($affectedIds)) {
+            Extension::whereIn('id', $affectedIds)->each(function ($e) {
+                $estado = $e->operadores()->count() > 0 ? 'en_uso' : 'libre';
+                if ($e->estado !== $estado) {
+                    $e->update(['estado' => $estado]);
+                }
+            });
+        }
 
         // Actualizar datos base del operador
         $operador->update([

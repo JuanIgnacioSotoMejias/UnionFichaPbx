@@ -8,6 +8,7 @@
                 <p class="text-xs text-slate-400 mt-1">Extensiones sincronizadas desde FreePBX · Asignación automática a operadores</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                @can('manage-system')
                 {{-- Botón Sincronizar desde FreePBX --}}
                 <form action="{{ route('extensions.sincronizar') }}" method="POST">
                     @csrf
@@ -22,6 +23,7 @@
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Añadir Manual
                 </a>
+                @endcan
             </div>
         </div>
 
@@ -74,14 +76,61 @@
             </div>
         </div>
 
-        <div x-data="{ vistaActiva: '8000' }">
+        <div x-data="{ 
+            vistaActiva: new URLSearchParams(window.location.search).get('tab') || '8000',
+            isLoading: false,
+            loadPage(event, section) {
+                let link = event.target.closest('a');
+                if (!link) return;
+                
+                let url = link.href;
+                if (!url) return;
+
+                event.preventDefault();
+                this.isLoading = true;
+
+                let targetUrl = new URL(url);
+                targetUrl.searchParams.set('tab', this.vistaActiva);
+                window.history.pushState({}, '', targetUrl.toString());
+
+                fetch(targetUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(res => res.text())
+                    .then(html => {
+                        let parser = new DOMParser();
+                        let doc = parser.parseFromString(html, 'text/html');
+                        let newContent = doc.querySelector('#partial-' + section).innerHTML;
+                        document.querySelector('#partial-' + section).innerHTML = newContent;
+                        this.isLoading = false;
+                    })
+                    .catch(() => {
+                        window.location.href = url; // Fallback
+                    });
+            }
+        }"
+        x-init="$watch('vistaActiva', val => {
+            let url = new URL(window.location.href);
+            url.searchParams.set('tab', val);
+            window.history.replaceState({}, '', url.toString());
+        })"
+        class="relative"
+        >
+            {{-- Loading overlay --}}
+            <div x-show="isLoading" style="display: none;" class="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-2xl">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+            </div>
             {{-- Botonera para alternar vistas --}}
             <div class="flex gap-2 mb-4">
                 <button @click="vistaActiva = '8000'" :class="vistaActiva === '8000' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'" class="px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
-                    Ver Extensiones 8000
+                    Operadores (8001-8006)
+                </button>
+                <button @click="vistaActiva = 'desp'" :class="vistaActiva === 'desp' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'" class="px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
+                    Despachadores (8007-8008)
                 </button>
                 <button @click="vistaActiva = '9000'" :class="vistaActiva === '9000' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'" class="px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
                     Ver Extensiones 9000
+                </button>
+                <button @click="vistaActiva = 'inactivas'" :class="vistaActiva === 'inactivas' ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'" class="px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
+                    Inactivas
                 </button>
             </div>
 
@@ -94,36 +143,85 @@
                     </h3>
                 </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left border-collapse">
-                    <thead class="bg-slate-900 text-white uppercase text-xs font-semibold tracking-wider">
-                        <tr class="border-b border-slate-800">
-                            <th class="px-6 py-4 font-bold">Extensión</th>
-                            <th class="px-6 py-4 font-bold">Nombre FreePBX</th>
-                            <th class="px-6 py-4 text-center font-bold">Local</th>
-                            <th class="px-6 py-4 text-center font-bold">AMI</th>
-                            <th class="px-6 py-4 font-bold">Grupo Asignado</th>
-                            <th class="px-6 py-4 text-right font-bold">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($extensionsOperadores as $ext)
-                            @include('extensions._row', ['ext' => $ext, 'estadosAmi' => $estadosAmi])
-                        @empty
-                        <tr>
-                            <td colspan="6" class="py-10 text-center text-slate-400 italic text-sm">
-                                No hay extensiones serie 8000 registradas.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($extensionsOperadores->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
-                    {{ $extensionsOperadores->appends(request()->except('page_op'))->links() }}
+            <div id="partial-8000" @click="loadPage($event, '8000')">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead class="bg-slate-900 text-white uppercase text-xs font-semibold tracking-wider">
+                            <tr class="border-b border-slate-800">
+                                <th class="px-6 py-4 font-bold">Extensión</th>
+                                <th class="px-6 py-4 font-bold">Nombre FreePBX</th>
+                                <th class="px-6 py-4 text-center font-bold">Local</th>
+                                <th class="px-6 py-4 text-center font-bold">AMI</th>
+                                <th class="px-6 py-4 font-bold">Grupo Asignado</th>
+                                @can('manage-system')
+                                <th class="px-6 py-4 text-right font-bold">Acciones</th>
+                                @endcan
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($extensionsOperadores as $ext)
+                                @include('extensions._row', ['ext' => $ext, 'estadosAmi' => $estadosAmi])
+                            @empty
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-slate-400 italic text-sm">
+                                    No hay extensiones serie 8000 registradas.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            @endif
+                @if($extensionsOperadores->hasPages())
+                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                        {{ $extensionsOperadores->appends(request()->except('page_op'))->links() }}
+                    </div>
+                @endif
+            </div>
+        </div>
+
+            {{-- Sección: Despachadores (8007-8008) --}}
+            <div x-show="vistaActiva === 'desp'" style="display: none;" x-transition class="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_-5px_rgba(15,23,42,0.4)] overflow-hidden mb-6">
+                <div class="bg-slate-900 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="font-black text-white uppercase tracking-tighter italic text-sm flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Extensiones de Despachadores (8007-8008)
+                    </h3>
+                </div>
+
+            <div id="partial-desp" @click="loadPage($event, 'desp')">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead class="bg-slate-900 text-white uppercase text-xs font-semibold tracking-wider">
+                            <tr class="border-b border-slate-800">
+                                <th class="px-6 py-4 font-bold">Extensión</th>
+                                <th class="px-6 py-4 font-bold">Nombre FreePBX</th>
+                                <th class="px-6 py-4 text-center font-bold">Local</th>
+                                <th class="px-6 py-4 text-center font-bold">AMI</th>
+                                <th class="px-6 py-4 font-bold">Grupo Asignado</th>
+                                @can('manage-system')
+                                <th class="px-6 py-4 text-right font-bold">Acciones</th>
+                                @endcan
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($extensionsDespachadores as $ext)
+                                @include('extensions._row', ['ext' => $ext, 'estadosAmi' => $estadosAmi])
+                            @empty
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-slate-400 italic text-sm">
+                                    No hay extensiones de despachadores registradas.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if($extensionsDespachadores->hasPages())
+                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                        {{ $extensionsDespachadores->appends(request()->except('page_desp'))->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
 
             {{-- Sección: Internos (9xxx) --}}
@@ -135,36 +233,118 @@
                     </h3>
                 </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left border-collapse">
-                    <thead class="bg-slate-900 text-white uppercase text-xs font-semibold tracking-wider">
-                        <tr class="border-b border-slate-800">
-                            <th class="px-6 py-4 font-bold">Extensión</th>
-                            <th class="px-6 py-4 font-bold">Nombre FreePBX</th>
-                            <th class="px-6 py-4 text-center font-bold">Local</th>
-                            <th class="px-6 py-4 text-center font-bold">AMI</th>
-                            <th class="px-6 py-4 font-bold">Grupo Asignado</th>
-                            <th class="px-6 py-4 text-right font-bold">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($extensionsInternos as $ext)
-                            @include('extensions._row', ['ext' => $ext, 'estadosAmi' => $estadosAmi])
-                        @empty
-                        <tr>
-                            <td colspan="6" class="py-10 text-center text-slate-400 italic text-sm">
-                                No hay extensiones serie 9000 registradas.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if($extensionsInternos->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
-                    {{ $extensionsInternos->appends(request()->except('page_int'))->links() }}
+            <div id="partial-9000" @click="loadPage($event, '9000')">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead class="bg-slate-900 text-white uppercase text-xs font-semibold tracking-wider">
+                            <tr class="border-b border-slate-800">
+                                <th class="px-6 py-4 font-bold">Extensión</th>
+                                <th class="px-6 py-4 font-bold">Nombre FreePBX</th>
+                                <th class="px-6 py-4 text-center font-bold">Local</th>
+                                <th class="px-6 py-4 text-center font-bold">AMI</th>
+                                <th class="px-6 py-4 font-bold">Grupo Asignado</th>
+                                @can('manage-system')
+                                <th class="px-6 py-4 text-right font-bold">Acciones</th>
+                                @endcan
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($extensionsInternos as $ext)
+                                @include('extensions._row', ['ext' => $ext, 'estadosAmi' => $estadosAmi])
+                            @empty
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-slate-400 italic text-sm">
+                                    No hay extensiones serie 9000 registradas.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            @endif
+                @if($extensionsInternos->hasPages())
+                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                        {{ $extensionsInternos->appends(request()->except('page_int'))->links() }}
+                    </div>
+                @endif
+            </div>
+            </div>
+
+            {{-- Sección: Inactivas --}}
+            <div x-show="vistaActiva === 'inactivas'" style="display: none;" x-transition class="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_-5px_rgba(15,23,42,0.4)] overflow-hidden">
+                <div class="bg-slate-900 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                    <h3 class="font-black text-white uppercase tracking-tighter italic text-sm flex items-center gap-2">
+                        <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Extensiones Inactivas (Deshabilitadas)
+                    </h3>
+                </div>
+
+            <div id="partial-inactivas" @click="loadPage($event, 'inactivas')">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead class="bg-slate-900 text-white uppercase text-xs font-semibold tracking-wider">
+                            <tr class="border-b border-slate-800">
+                                <th class="px-6 py-4 font-bold">Extensión</th>
+                                <th class="px-6 py-4 font-bold">Nombre FreePBX / Motivo</th>
+                                <th class="px-6 py-4 text-center font-bold">Local</th>
+                                <th class="px-6 py-4 text-center font-bold">AMI</th>
+                                <th class="px-6 py-4 font-bold">Grupo Asignado</th>
+                                @can('manage-system')
+                                <th class="px-6 py-4 text-right font-bold">Acciones</th>
+                                @endcan
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($extensionsInactivas as $ext)
+                                @include('extensions._row', ['ext' => $ext, 'estadosAmi' => $estadosAmi])
+                            @empty
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-slate-400 italic text-sm">
+                                    No hay extensiones inactivas.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if($extensionsInactivas->hasPages())
+                    <div class="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                        {{ $extensionsInactivas->appends(request()->except('page_inactivas'))->links() }}
+                    </div>
+                @endif
+            </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal para Habilitar Seguro --}}
+    <div x-data="{ open: false, extId: null, extNumero: null }"
+         @open-enable-modal.window="open = true; extId = $event.detail.id; extNumero = $event.detail.numero"
+         x-show="open" 
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div x-show="open" x-transition.opacity class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="open = false"></div>
+            
+            <div x-show="open" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                <h3 class="text-lg font-black text-slate-800 mb-2">Habilitar Extensión <span x-text="extNumero" class="text-emerald-600"></span></h3>
+                <p class="text-sm text-slate-500 mb-6">Para habilitar esta extensión, debes confirmar tu identidad introduciendo tu contraseña de administrador.</p>
+                
+                <form :action="`{{ url('extensions') }}/${extId}/enable-secure`" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <label for="password" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Contraseña de Administrador</label>
+                        <input type="password" name="password" id="password" required class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-800">
+                    </div>
+                    
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button type="button" @click="open = false" class="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            Confirmar Habilitación
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

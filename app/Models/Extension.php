@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Extension extends Model
 {
@@ -16,9 +16,10 @@ class Extension extends Model
         'nombre_freepbx',
         'tipo_tecnologia',
         'estado',
-        'operador_config_id',
         'grupo_horario',
         'sincronizado_at',
+        'is_active',
+        'motivo_inactividad',
     ];
 
     protected $casts = [
@@ -30,11 +31,11 @@ class Extension extends Model
     // =========================================================================
 
     /**
-     * Operador asignado a esta extensión.
+     * Operadores asignados a esta extensión (Max 12).
      */
-    public function operador(): BelongsTo
+    public function operadores(): BelongsToMany
     {
-        return $this->belongsTo(OperadorConfig::class, 'operador_config_id');
+        return $this->belongsToMany(OperadorConfig::class, 'ext_operador', 'extension_id', 'operador_config_id')->withTimestamps();
     }
 
     // =========================================================================
@@ -42,19 +43,19 @@ class Extension extends Model
     // =========================================================================
 
     /**
-     * Extensiones libres disponibles para asignación.
+     * Extensiones libres disponibles para asignación (sin operadores).
      */
     public function scopeLibres($query)
     {
-        return $query->where('estado', 'libre')->whereNull('operador_config_id');
+        return $query->where('estado', 'libre')->doesntHave('operadores');
     }
 
     /**
-     * Extensiones en uso (asignadas a un operador).
+     * Extensiones en uso (con al menos un operador asignado).
      */
     public function scopeEnUso($query)
     {
-        return $query->where('estado', 'en_uso')->whereNotNull('operador_config_id');
+        return $query->where('estado', 'en_uso')->has('operadores');
     }
 
     // =========================================================================
@@ -62,33 +63,43 @@ class Extension extends Model
     // =========================================================================
 
     /**
-     * Marca la extensión como en uso y asigna un operador.
+     * Asigna un operador a la extensión.
      */
     public function asignarA(OperadorConfig $operador): void
     {
-        $this->update([
-            'estado'            => 'en_uso',
-            'operador_config_id' => $operador->id,
-        ]);
+        if ($this->operadores()->count() < 12) {
+            $this->operadores()->syncWithoutDetaching([$operador->id]);
+            $this->update(['estado' => 'en_uso']);
+        }
     }
 
     /**
-     * Marca la extensión como en uso (sin cambiar operador).
+     * Libera un operador específico de la extensión.
+     */
+    public function liberarOperador(OperadorConfig $operador): void
+    {
+        $this->operadores()->detach($operador->id);
+        
+        if ($this->operadores()->count() === 0) {
+            $this->update(['estado' => 'libre']);
+        }
+    }
+
+    /**
+     * Libera la extensión por completo (quita a todos los operadores).
+     */
+    public function markAsFree(): void
+    {
+        $this->operadores()->detach();
+        $this->update(['estado' => 'libre']);
+    }
+
+    /**
+     * Marca la extensión como en uso manualmente.
      */
     public function markAsInUse(): void
     {
         $this->update(['estado' => 'en_uso']);
-    }
-
-    /**
-     * Libera la extensión: la marca como libre y desasocia al operador.
-     */
-    public function markAsFree(): void
-    {
-        $this->update([
-            'estado'            => 'libre',
-            'operador_config_id' => null,
-        ]);
     }
 
     /**

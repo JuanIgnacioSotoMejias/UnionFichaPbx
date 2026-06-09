@@ -13,3 +13,6 @@ Schedule::command('app:reset-operators')->dailyAt('08:30');
 
 // Anti-phantom sessions: verifica heartbeat cada minuto y cierra sesiones zombies
 Schedule::command('pbx:close-phantom-sessions')->everyMinute()->withoutOverlapping();
+
+// Verificar estado AMI de extensiones activas y disparar alertas offline
+Schedule::command('extensions:check-status')->everyMinute()->withoutOverlapping();

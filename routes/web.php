@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('extensions', ExtensionController::class);
     Route::post('extensions/{extension}/test', [ExtensionController::class, 'testExtension'])->name('extensions.test');
     Route::post('extensions/{extension}/liberar', [ExtensionController::class, 'liberar'])->name('extensions.liberar');
+    Route::post('extensions/{extension}/enable-secure', [ExtensionController::class, 'enableSecure'])->name('extensions.enableSecure');
 
     // Operators CRUD and toggle
     Route::resource('operadores', OperadorController::class);

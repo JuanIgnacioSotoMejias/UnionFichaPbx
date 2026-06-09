@@ -7,6 +7,7 @@ use App\Models\OperadorConfig;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Gate;
 
 class OperadorController extends Controller
 {
@@ -15,13 +16,18 @@ class OperadorController extends Controller
      */
     public function index(): View
     {
-        $operadores = OperadorConfig::orderBy('nombre_operador')->paginate(15);
-        $extensionesLibres = Extension::where('numero', 'like', '8%')
-            ->where('estado', 'libre')
-            ->orderBy('numero')
-            ->get();
+        // Operadores sin ninguna extensión (Disponibles)
+        $operadoresDisponibles = OperadorConfig::doesntHave('extensiones')->orderBy('nombre_operador')->get();
+        
+        // Extensiones con sus operadores asignados
+        $extensionesConOperadores = Extension::with(['operadores' => function ($q) {
+            $q->orderBy('nombre_operador');
+        }])->has('operadores')->orderBy('numero')->get();
 
-        return view('operadores.index', compact('operadores', 'extensionesLibres'));
+        // Todas las extensiones para el select/modal de asignación
+        $extensionesTotales = Extension::orderBy('numero')->get();
+
+        return view('operadores.index', compact('operadoresDisponibles', 'extensionesConOperadores', 'extensionesTotales'));
     }
 
     /**
@@ -29,20 +35,38 @@ class OperadorController extends Controller
      */
     public function update(\App\Http\Requests\UpdateOperadorRequest $request, OperadorConfig $operador): RedirectResponse
     {
-        $newExtension = $request->input('extension');
+        Gate::authorize('manage-system');
+        $extensionesRequest = $request->input('extensiones', []);
         $grupoHorario = $request->input('grupo_horario');
 
-        // Si se seleccionó una extensión y NO se seleccionó un grupo manualmente, lo hereda de la extensión.
-        if ($newExtension !== '0000' && empty($grupoHorario)) {
-            $extNew = Extension::where('numero', $newExtension)->first();
-            if ($extNew) {
-                $grupoHorario = $extNew->grupo_horario;
+        // Validar límite estricto de 12 operadores por extensión
+        foreach ($extensionesRequest as $extNum) {
+            $ext = Extension::where('numero', $extNum)->first();
+            if ($ext) {
+                $currentCount = $ext->operadores()->where('operadores_config.id', '!=', $operador->id)->count();
+                if ($currentCount >= 12) {
+                    return back()->withErrors(['extensiones' => "La extensión {$extNum} ya tiene el límite máximo de 12 operadores asignados."]);
+                }
             }
         }
 
+        $extIds = Extension::whereIn('numero', $extensionesRequest)->pluck('id')->toArray();
+        $operador->extensiones()->sync($extIds);
+
+        // Recalcular estado de las extensiones (en_uso / libre)
+        Extension::all()->each(function ($e) {
+            $estado = $e->operadores()->count() > 0 ? 'en_uso' : 'libre';
+            if ($e->estado !== $estado) {
+                $e->update(['estado' => $estado]);
+            }
+        });
+
+        // Actualizar datos base del operador
         $operador->update([
-            'extension'     => $newExtension,
             'grupo_horario' => $grupoHorario,
+            'horario_turno' => $request->input('horario_turno'),
+            'horario_comida' => $request->input('horario_comida'),
+            'horario_descanso' => $request->input('horario_descanso'),
             'is_active'     => $request->input('is_active'),
         ]);
 
@@ -55,6 +79,7 @@ class OperadorController extends Controller
      */
     public function toggleActivo(OperadorConfig $operador): RedirectResponse
     {
+        Gate::authorize('manage-system');
         $operador->update(['is_active' => !$operador->is_active]);
         $estado = $operador->is_active ? 'activado' : 'desactivado';
 

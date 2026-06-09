@@ -1,5 +1,20 @@
 <x-app-layout>
-    <div class="p-6 space-y-6">
+    <div class="p-6 space-y-6" x-data="{
+        alerts: [],
+        baseErrors: {{ $erroresHoy }},
+        get errorCount() { return this.baseErrors + this.alerts.length; },
+        showModal: false,
+        addAlert(alerta) {
+            this.alerts.unshift({
+                ...alerta,
+                time: new Date().toLocaleTimeString()
+            });
+        },
+        clearAlerts() {
+            this.alerts = [];
+            this.baseErrors = 0; // Opcional: limpiar también los errores base de la sesión si se desea
+        }
+    }" @nueva-alerta-global.window="addAlert($event.detail)">
 
         {{-- ═══════════════════════════════════════════════════════════════
              BANNER DE PRODUCTIVIDAD (OPERADOR ACTUAL)
@@ -19,6 +34,7 @@
                     </div>
                 </div>
                 
+                @if(config('app.metrics_enabled'))
                 <div class="flex items-center gap-8">
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">AHT (Promedio)</p>
@@ -37,6 +53,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
             @endif
         </div>
@@ -140,7 +157,7 @@
                 <div class="relative flex items-start justify-between">
                     <div>
                         <p class="text-xs font-semibold text-white/70 uppercase tracking-widest mb-1">Errores Receptora</p>
-                        <p id="errores-receptora-text" class="text-2xl font-black text-white leading-none">{{ $erroresHoy }}</p>
+                        <p class="text-2xl font-black text-white leading-none" x-text="errorCount">{{ $erroresHoy }}</p>
                         <p class="text-[10px] text-white/60 mt-1 font-mono font-medium">Errores 4xx / 5xx hoy</p>
                     </div>
                     <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -150,35 +167,27 @@
                     </div>
                 </div>
 
-                <div class="relative mt-3 flex items-center gap-2">
-                    @if($erroresHoy > 0)
-                        <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                        <span class="text-xs font-bold text-white/90 uppercase">¡Requiere revisión!</span>
-                    @else
-                        <span class="w-2 h-2 rounded-full bg-white/40"></span>
-                        <span class="text-xs font-bold text-white/80 uppercase">Sin errores detectados</span>
-                    @endif
+                <div class="relative mt-3 flex items-center gap-2" style="min-height: 24px;">
+                    <template x-if="errorCount > 0">
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                <span class="text-[10px] font-bold text-white/90 uppercase">¡Requiere revisión!</span>
+                            </div>
+                            <button @click="showModal = true" class="text-[9px] bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded font-bold uppercase tracking-widest transition border border-white/20">Ver información</button>
+                        </div>
+                    </template>
+                    <template x-if="errorCount === 0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-white/40"></span>
+                            <span class="text-xs font-bold text-white/80 uppercase">Sin errores detectados</span>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
 
-        {{-- ═══════════════════════════════════════════════════════════════
-             PANEL DE ALERTAS DE PRODUCTIVIDAD (REAL-TIME)
-             ═══════════════════════════════════════════════════════════════ --}}
-        <div id="alerts-container" class="hidden space-y-4">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-black text-slate-800 uppercase tracking-tighter italic text-sm flex items-center gap-2">
-                    <span class="relative flex h-3 w-3">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                    Alertas Críticas Detectadas
-                </h3>
-                <button onclick="document.getElementById('alerts-container').classList.add('hidden')" class="text-[10px] text-slate-400 hover:text-slate-600 font-bold uppercase transition">Limpiar Vista</button>
-            </div>
-            <div id="alerts-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                </div>
-        </div>
+
 
         {{-- ═══════════════════════════════════════════════════════════════
              SECCIÓN DE CONTENIDO PRINCIPAL: TABLA + FEED LATERAL
@@ -213,8 +222,10 @@
                             <tr class="text-white text-sm uppercase font-semibold tracking-wider">
                                 <th class="px-6 py-3 font-bold">Datos del Operador</th>
                                 <th class="px-6 py-3 font-bold text-center">Extensión</th>
+                                @if(config('app.metrics_enabled'))
                                 <th class="px-6 py-3 font-bold text-center">AHT</th>
                                 <th class="px-6 py-3 font-bold text-center">Ocupación</th>
+                                @endif
                                 <th class="px-6 py-3 font-bold text-center">Estado Turno</th>
                                 <th class="px-6 py-3 font-bold text-right">Estado FreePBX</th>
                             </tr>
@@ -256,6 +267,7 @@
                                         $textOcupacion = 'text-red-600';
                                     }
                                 @endphp
+                                @if(config('app.metrics_enabled'))
                                 <td class="px-6 py-4 text-center">
                                     <span class="text-sm font-bold {{ $ahtSeconds > 300 ? 'text-red-500' : 'text-slate-600' }}">
                                         {{ $ahtFormatted }}
@@ -269,6 +281,7 @@
                                         <span class="text-xs font-bold {{ $textOcupacion }}">{{ $ocupacion }}%</span>
                                     </div>
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 text-center">
                                     @php
                                         $estadoTurno = $scheduleService->getCurrentState($op);
@@ -303,7 +316,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="py-10 text-center text-slate-400 italic text-xs">
+                                <td colspan="{{ config('app.metrics_enabled') ? 6 : 4 }}" class="py-10 text-center text-slate-400 italic text-xs">
                                     No hay operadores registrados en el middleware local.
                                 </td>
                             </tr>
@@ -374,6 +387,72 @@
                 @endif
             </div>
         </div>
+        
+        {{-- ═══════════════════════════════════════════════════════════════
+             MODAL DE ALERTAS CRÍTICAS (ALPINEJS)
+             ═══════════════════════════════════════════════════════════════ --}}
+        <div x-show="showModal" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="showModal" x-transition.opacity class="fixed inset-0 bg-slate-900 bg-opacity-75 transition-opacity" @click="showModal = false"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                <div x-show="showModal" x-transition.scale.origin.bottom class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-4">
+                            <h3 class="text-lg leading-6 font-black text-rose-600 uppercase tracking-tight flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                Registro de Alertas Críticas
+                            </h3>
+                            <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 transition">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="max-h-[60vh] overflow-y-auto pr-2 space-y-3">
+                            <template x-for="(alerta, index) in alerts" :key="index">
+                                <div class="p-4 rounded-xl border-l-4 shadow-sm bg-slate-50" :class="{
+                                    'border-rose-500': alerta.nivel === 'CRITICAL',
+                                    'border-amber-500': alerta.nivel === 'WARNING',
+                                    'border-blue-500': alerta.nivel !== 'CRITICAL' && alerta.nivel !== 'WARNING'
+                                }">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full" 
+                                              :class="{
+                                                  'bg-rose-100 text-rose-700': alerta.nivel === 'CRITICAL',
+                                                  'bg-amber-100 text-amber-700': alerta.nivel === 'WARNING',
+                                                  'bg-blue-100 text-blue-700': alerta.nivel !== 'CRITICAL' && alerta.nivel !== 'WARNING'
+                                              }" x-text="alerta.tipo_alerta"></span>
+                                        <span class="text-[10px] font-mono text-slate-400" x-text="alerta.time"></span>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-800 leading-tight" x-text="alerta.descripcion"></p>
+                                    <div class="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
+                                        <span class="text-[10px] text-slate-400 uppercase font-black">Nivel: <span x-text="alerta.nivel"></span></span>
+                                    </div>
+                                </div>
+                            </template>
+                            
+                            <template x-if="alerts.length === 0 && baseErrors > 0">
+                                <div class="text-center py-10">
+                                    <p class="text-sm text-slate-500 font-bold">Hay errores reportados en el día, pero no se han capturado alertas nuevas en esta sesión de monitoreo.</p>
+                                </div>
+                            </template>
+                            <template x-if="alerts.length === 0 && baseErrors === 0">
+                                <div class="text-center py-10">
+                                    <p class="text-sm text-slate-500 font-bold">No hay alertas críticas en el registro.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+                        <button @click="clearAlerts(); showModal = false" type="button" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-rose-600 text-base font-medium text-white hover:bg-rose-700 sm:ml-3 sm:w-auto sm:text-sm transition uppercase tracking-widest font-bold">
+                            Limpiar Registro
+                        </button>
+                        <button @click="showModal = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-lg border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm uppercase tracking-widest font-bold">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════
@@ -382,14 +461,7 @@
     @push('scripts')
     <script type="module">
         document.addEventListener('DOMContentLoaded', () => {
-            // Escucha activa de canales WebSocket (Laravel Echo)
-            if (window.Echo) {
-                window.Echo.channel('alertas')
-                    .listen('.alerta.nueva', (e) => {
-                        showRealTimeAlert(e.alerta);
-                    });
-            }
-
+            // El listener de Alpine JS se encarga ahora del evento 'nueva-alerta-global'
             // Inicializar el motor de Polling unificado cada 5 segundos
             setInterval(executeUnifiedPolling, 5000);
         });
@@ -441,13 +513,9 @@
                 .catch(err => console.error("Error ejecutando Polling del Dashboard:", err));
         }
 
-        /**
-         * Renderiza el estado visual de la tarjeta de red de FreePBX
-         */
         function updatePbxStatusCard(data) {
             const card    = document.getElementById('pbx-status-card');
             const text    = document.getElementById('pbx-status-text');
-            const errText = document.getElementById('errores-receptora-text');
             const dot     = document.getElementById('pbx-status-dot');
             const subtext = document.getElementById('pbx-status-subtext');
 
@@ -461,12 +529,14 @@
                 if (subtext) subtext.innerText = 'En línea';
             } else {
                 if (text.innerText.toUpperCase() === 'CONECTADO') {
-                    showRealTimeAlert({
-                        nivel: 'CRITICAL',
-                        tipo_alerta: 'API PBX CAÍDA',
-                        descripcion: 'Se perdió conexión con Asterisk/FreePBX.'
-                    });
-                    if (errText) errText.innerText = parseInt(errText.innerText) + 1;
+                    // Despachar evento para que Alpine lo capture
+                    window.dispatchEvent(new CustomEvent('nueva-alerta-global', {
+                        detail: {
+                            nivel: 'CRITICAL',
+                            tipo_alerta: 'API PBX CAÍDA',
+                            descripcion: 'Se perdió conexión con Asterisk/FreePBX.'
+                        }
+                    }));
                 }
                 card.classList.remove('bg-emerald-700');
                 card.classList.add('bg-rose-700');
@@ -476,44 +546,8 @@
             }
         }
 
-        /**
-         * Inyecta dinámicamente alertas críticas provenientes de WebSocket o eventos del sistema
-         */
-        function showRealTimeAlert(alerta) {
-            const container = document.getElementById('alerts-container');
-            const list = document.getElementById('alerts-list');
-            
-            if (!container || !list) return;
-            container.classList.remove('hidden');
 
-            const alertDiv = document.createElement('div');
-            const color = getLevelColor(alerta.nivel);
-            alertDiv.className = `p-4 rounded-xl border-l-4 shadow-xl bg-white transition-all duration-500 hover:scale-[1.02] border-${color}-500`;
-            
-            alertDiv.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-${color}-100 text-${color}-700">
-                        ${alerta.tipo_alerta}
-                    </span>
-                    <span class="text-[9px] font-mono text-slate-400">${new Date().toLocaleTimeString()}</span>
-                </div>
-                <p class="text-xs font-bold text-slate-800 leading-tight">${alerta.descripcion}</p>
-                <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-[10px] text-slate-400 uppercase font-black">Nivel: ${alerta.nivel}</span>
-                    <button class="text-[10px] font-bold text-blue-600 hover:underline uppercase">Ver Detalles</button>
-                </div>
-            `;
 
-            list.prepend(alertDiv);
-        }
-
-        function getLevelColor(nivel) {
-            switch(nivel) {
-                case 'CRITICAL': return 'red';
-                case 'WARNING': return 'amber';
-                default: return 'blue';
-            }
-        }
     </script>
     @endpush
 </x-app-layout>

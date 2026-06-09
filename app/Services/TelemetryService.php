@@ -161,19 +161,22 @@ class TelemetryService
      */
     public function formatAHT($seconds)
     {
-        $seconds = round($seconds);
-        
-        if ($seconds <= 0) {
+        try {
+            if (!is_numeric($seconds) || $seconds <= 0) {
+                return '0.0s';
+            }
+
+            $seconds = round((float)$seconds);
+            $minutes = floor($seconds / 60);
+            $remainingSeconds = $seconds % 60;
+
+            if ($minutes > 0) {
+                return "{$minutes}m {$remainingSeconds}s";
+            }
+
+            return "{$remainingSeconds}s";
+        } catch (\Throwable $e) {
             return '0.0s';
         }
-
-        $minutes = floor($seconds / 60);
-        $remainingSeconds = $seconds % 60;
-
-        if ($minutes > 0) {
-            return "{$minutes}m {$remainingSeconds}s";
-        }
-
-        return "{$remainingSeconds}s";
     }
 }

@@ -13,12 +13,17 @@
             @if($ext->descripcion && $ext->descripcion !== $ext->nombre_freepbx)
                 <p class="text-[10px] text-slate-400">{{ $ext->descripcion }}</p>
             @endif
+            @if(!$ext->is_active && $ext->motivo_inactividad)
+                <p class="text-[10px] text-red-500 mt-1"><strong>Motivo:</strong> {{ $ext->motivo_inactividad }}</p>
+            @endif
         </div>
     </td>
 
     {{-- Estado Local --}}
     <td class="px-6 py-4 text-center">
-        @if($ext->estado === 'libre')
+        @if(!$ext->is_active)
+            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-red-200">Inactiva</span>
+        @elseif($ext->estado === 'libre')
             <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-emerald-200">Libre</span>
         @elseif($ext->estado === 'en_uso')
             <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-200">En Uso</span>
@@ -61,6 +66,7 @@
     </td>
 
     {{-- Acciones --}}
+    @can('manage-system')
     <td class="px-6 py-4 text-right">
         <div class="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition">
             {{-- Liberar extensión --}}
@@ -78,13 +84,25 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </a>
 
-            {{-- Eliminar --}}
-            <form action="{{ route('extensions.destroy', $ext) }}" method="POST" onsubmit="return confirm('¿Eliminar la extensión {{ $ext->numero }}? Esta acción no se puede deshacer.');">
-                @csrf @method('DELETE')
-                <button type="submit" title="Eliminar" class="p-2 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-700 transition">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            {{-- Eliminar/Deshabilitar --}}
+            @if(!$ext->is_active && in_array($ext->numero, ['8009', '8010']))
+                <button type="button" @click="$dispatch('open-enable-modal', { id: '{{ $ext->id }}', numero: '{{ $ext->numero }}' })" title="Habilitar Seguro" class="p-2 rounded-lg transition hover:bg-emerald-50 text-emerald-500 hover:text-emerald-700">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 </button>
-            </form>
+            @else
+                <form action="{{ route('extensions.destroy', $ext) }}" method="POST" onsubmit="if({{ $ext->is_active ? 'true' : 'false' }}) { let m = prompt('Motivo de inactividad para la extensión {{ $ext->numero }}:'); if(m === null) return false; this.motivo_inactividad.value = m; } return confirm('¿Seguro que deseas {{ $ext->is_active ? 'deshabilitar' : 'habilitar' }} la extensión {{ $ext->numero }}?');">
+                    @csrf @method('DELETE')
+                    <input type="hidden" name="motivo_inactividad" value="">
+                    <button type="submit" title="{{ $ext->is_active ? 'Deshabilitar' : 'Habilitar' }}" class="p-2 rounded-lg transition {{ $ext->is_active ? 'hover:bg-amber-50 text-amber-500 hover:text-amber-700' : 'hover:bg-emerald-50 text-emerald-500 hover:text-emerald-700' }}">
+                        @if($ext->is_active)
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"/></svg>
+                        @else
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        @endif
+                    </button>
+                </form>
+            @endif
         </div>
     </td>
+    @endcan
 </tr>

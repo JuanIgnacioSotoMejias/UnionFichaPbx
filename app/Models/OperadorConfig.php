@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class OperadorConfig extends Model
 {
@@ -16,6 +17,9 @@ class OperadorConfig extends Model
         'queue_name',
         'is_active',
         'grupo_horario',
+        'horario_turno',
+        'horario_comida',
+        'horario_descanso',
     ];
 
     protected $casts = [
@@ -28,11 +32,19 @@ class OperadorConfig extends Model
     }
 
     /**
-     * Extensión actualmente asignada a este operador.
+     * Extensiones a las que está asignado este operador.
      */
-    public function extensionAsignada(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function extensiones(): BelongsToMany
     {
-        return $this->hasOne(Extension::class, 'operador_config_id');
+        return $this->belongsToMany(Extension::class, 'ext_operador', 'operador_config_id', 'extension_id')->withTimestamps();
+    }
+
+    /**
+     * Verifica si el operador está disponible (sin extensiones asignadas)
+     */
+    public function getIsDisponibleAttribute(): bool
+    {
+        return $this->extensiones()->count() === 0;
     }
 
     /**

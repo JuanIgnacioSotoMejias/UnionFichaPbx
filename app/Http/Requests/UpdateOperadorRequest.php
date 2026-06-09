@@ -14,8 +14,12 @@ class UpdateOperadorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'extension'     => 'required|string',
+            'extensiones'   => 'nullable|array',
+            'extensiones.*' => 'exists:extensions,numero',
             'grupo_horario' => 'nullable|in:1,2',
+            'horario_turno' => 'nullable|string|max:50',
+            'horario_comida' => 'nullable|string|max:50',
+            'horario_descanso' => 'nullable|string|max:50',
             'is_active'     => 'required|boolean',
         ];
     }

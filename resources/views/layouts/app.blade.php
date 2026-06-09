@@ -29,6 +29,60 @@
             </div>
 
             <div class="flex items-center gap-6">
+                {{-- Notificaciones Globales --}}
+                <div x-data="{
+                    open: false,
+                    notificaciones: [],
+                    unreadCount: 0,
+                    addNotification(notif) {
+                        this.notificaciones.unshift(notif);
+                        if(this.notificaciones.length > 20) this.notificaciones.pop();
+                        this.unreadCount++;
+                    },
+                    markAsRead() {
+                        this.unreadCount = 0;
+                    }
+                }"
+                @nueva-alerta-global.window="addNotification($event.detail)"
+                class="relative">
+                    <button @click="open = !open; markAsRead()" class="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span x-show="unreadCount > 0" class="absolute top-1 right-1 flex items-center justify-center w-4 h-4 text-[9px] font-bold text-white bg-red-600 rounded-full" x-text="unreadCount" style="display: none;"></span>
+                    </button>
+                    
+                    <div x-show="open" @click.away="open = false" x-transition style="display: none;" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+                        <div class="bg-slate-900 px-4 py-3 flex justify-between items-center">
+                            <h3 class="text-sm font-black text-white uppercase tracking-tighter">Notificaciones</h3>
+                            <span class="text-xs text-slate-400 font-mono" x-text="notificaciones.length"></span>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            <template x-if="notificaciones.length === 0">
+                                <div class="p-6 text-center text-slate-400 text-sm font-medium italic">
+                                    No hay notificaciones recientes
+                                </div>
+                            </template>
+                            <template x-for="(notif, index) in notificaciones" :key="index">
+                                <div class="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" :class="notif.nivel === 'CRITICAL' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-black uppercase text-slate-800" x-text="notif.tipo_alerta"></p>
+                                            <p class="text-[11px] text-slate-500 mt-0.5 leading-tight" x-text="notif.descripcion"></p>
+                                            <p class="text-[9px] text-slate-400 mt-1 font-mono" x-text="notif.hora"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="text-right hidden md:block border-r pr-6 border-slate-200">
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reloj de Estación</p>
                     <p class="text-sm font-black text-slate-700 font-mono" id="real-time-clock">{{ now()->format('H:i:s') }}</p>
@@ -140,7 +194,84 @@
     <script>
         setInterval(() => {
             const now = new Date();
-            document.getElementById('real-time-clock').innerText = now.toLocaleTimeString('en-GB');
+            const clock = document.getElementById('real-time-clock');
+            if(clock) clock.innerText = now.toLocaleTimeString('en-GB');
         }, 1000);
+
+        /**
+         * Toast flotante global de advertencia
+         */
+        function showGlobalToast(titulo, descripcion, nivel = 'WARNING') {
+            let toastContainer = document.getElementById('global-toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'global-toast-container';
+                toastContainer.className = 'fixed bottom-6 right-6 z-[9999] space-y-3 max-w-sm';
+                document.body.appendChild(toastContainer);
+            }
+
+            const isCritical = nivel === 'CRITICAL';
+            const colorClass = isCritical ? 'red' : 'amber';
+
+            const toast = document.createElement('div');
+            toast.className = 'transform translate-x-full opacity-0 transition-all duration-500 ease-out';
+            toast.innerHTML = `
+                <div class="bg-white border-l-4 border-${colorClass}-500 rounded-xl shadow-2xl p-4 flex items-start gap-3 ring-1 ring-slate-200">
+                    <div class="flex-shrink-0 w-10 h-10 bg-${colorClass}-100 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-${colorClass}-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-black text-slate-800 uppercase tracking-wide">${titulo}</p>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-tight">${descripcion}</p>
+                        <p class="text-[9px] text-slate-400 mt-2 font-mono">${new Date().toLocaleTimeString()}</p>
+                    </div>
+                    <button onclick="this.closest('.transform').remove()" class="text-slate-400 hover:text-slate-600 flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+                toast.classList.add('translate-x-0', 'opacity-100');
+            });
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 500);
+            }, 8000);
+        }
+    </script>
+    @stack('scripts')
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.Echo) {
+                window.Echo.channel('alertas')
+                    .listen('.alerta.nueva', (e) => {
+                        window.dispatchEvent(new CustomEvent('nueva-alerta-global', { 
+                            detail: {
+                                nivel: e.alerta.nivel || 'WARNING',
+                                tipo_alerta: e.alerta.tipo_alerta,
+                                descripcion: e.alerta.descripcion,
+                                hora: new Date().toLocaleTimeString()
+                            }
+                        }));
+                        showGlobalToast(e.alerta.tipo_alerta, e.alerta.descripcion, e.alerta.nivel);
+                    })
+                    .listen('.extension.offline', (e) => {
+                        window.dispatchEvent(new CustomEvent('nueva-alerta-global', { 
+                            detail: {
+                                nivel: e.nivel || 'WARNING',
+                                tipo_alerta: e.tipo_alerta || 'EXTENSIÓN OFFLINE',
+                                descripcion: e.descripcion || `Ext. ${e.extension} caída.`,
+                                hora: new Date().toLocaleTimeString()
+                            }
+                        }));
+                        showGlobalToast(`Extensión ${e.extension} Offline`, e.descripcion, 'WARNING');
+                    });
+            }
+        });
     </script>
 </body>

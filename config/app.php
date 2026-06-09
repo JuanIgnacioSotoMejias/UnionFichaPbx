@@ -142,5 +142,12 @@ return [
     'receptor_allowed_ips' => env('RECEPTOR_ALLOWED_IPS', ''),
     'receptor_rate_limit'  => (int) env('RECEPTOR_RATE_LIMIT', 60),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Métricas Dashboard
+    |--------------------------------------------------------------------------
+    */
+    'metrics_enabled' => env('METRICS_ENABLED', false),
+
 ];
 

@@ -64,11 +64,13 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         if (auth()->id() === $user->id) {
-            return redirect()->route('users.index')->with('error', 'No puedes eliminar tu propio usuario.');
+            return redirect()->route('users.index')->with('error', 'No puedes alterar el estado de tu propio usuario.');
         }
 
-        $user->delete();
+        $user->is_active = !$user->is_active;
+        $user->save();
 
-        return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente.');
+        $action = $user->is_active ? 'habilitado' : 'deshabilitado';
+        return redirect()->route('users.index')->with('success', "Usuario {$action} exitosamente.");
     }
 }

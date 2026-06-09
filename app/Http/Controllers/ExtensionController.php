@@ -8,6 +8,7 @@ use App\Services\AmiService;
 use App\Services\FreePbxService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 
 class ExtensionController extends Controller
 {
@@ -23,21 +24,36 @@ class ExtensionController extends Controller
      */
     public function index()
     {
-        // Paginamos separando por prefijo
-        $extensionsOperadores = Extension::with('operador')
-            ->where('numero', 'like', '8%')
+        // Paginamos separando por prefijo y filtrando solo activas
+        $extensionsOperadores = Extension::with('operadores')
+            ->where('is_active', true)
+            ->whereBetween('numero', ['8001', '8006'])
             ->orderBy('numero')
             ->paginate(5, ['*'], 'page_op');
 
-        $extensionsInternos = Extension::with('operador')
+        $extensionsDespachadores = Extension::with('operadores')
+            ->where('is_active', true)
+            ->whereBetween('numero', ['8007', '8008'])
+            ->orderBy('numero')
+            ->paginate(5, ['*'], 'page_desp');
+
+        $extensionsInternos = Extension::with('operadores')
+            ->where('is_active', true)
             ->where('numero', 'like', '9%')
             ->orderBy('numero')
             ->paginate(5, ['*'], 'page_int');
 
+        $extensionsInactivas = Extension::with('operadores')
+            ->where('is_active', false)
+            ->orderBy('numero')
+            ->paginate(5, ['*'], 'page_inactivas');
+
         // Consultar estado real de cada extensión vía AMI
         $numerosOp = $extensionsOperadores->pluck('numero')->toArray();
+        $numerosDesp = $extensionsDespachadores->pluck('numero')->toArray();
         $numerosInt = $extensionsInternos->pluck('numero')->toArray();
-        $numeros = array_merge($numerosOp, $numerosInt);
+        $numerosInactivas = $extensionsInactivas->pluck('numero')->toArray();
+        $numeros = array_merge($numerosOp, $numerosDesp, $numerosInt, $numerosInactivas);
         $estadosAmi = [];
         $amiError = null;
 
@@ -50,7 +66,7 @@ class ExtensionController extends Controller
         }
 
         // Operadores sin extensión asignada (para el select de asignación manual)
-        $operadoresSinExtension = OperadorConfig::whereDoesntHave('extensionAsignada')
+        $operadoresSinExtension = OperadorConfig::whereDoesntHave('extensiones')
             ->orderBy('nombre_operador')
             ->get();
 
@@ -58,7 +74,9 @@ class ExtensionController extends Controller
 
         return view('extensions.index', compact(
             'extensionsOperadores', 
+            'extensionsDespachadores',
             'extensionsInternos', 
+            'extensionsInactivas',
             'estadosAmi', 
             'operadoresSinExtension',
             'totalExtensions',
@@ -71,6 +89,7 @@ class ExtensionController extends Controller
      */
     public function sincronizar()
     {
+        Gate::authorize('manage-system');
         try {
             $extensionesRemote = $this->freePbx->fetchAllExtensionsDetailed();
 
@@ -121,6 +140,7 @@ class ExtensionController extends Controller
      */
     public function testExtension($id, AmiService $amiService)
     {
+        Gate::authorize('manage-system');
         $extension = Extension::findOrFail($id);
 
         if (env('AMI_DRY_RUN', false)) {
@@ -148,7 +168,8 @@ class ExtensionController extends Controller
      */
     public function liberar(Extension $extension)
     {
-        $nombreOp = $extension->operador?->nombre_operador ?? 'N/A';
+        Gate::authorize('manage-system');
+        $nombreOp = $extension->operadores->pluck('nombre_operador')->join(', ') ?: 'N/A';
         $extension->markAsFree();
 
         Log::info("[Extensions] Liberada: Ext {$extension->numero} (antes: {$nombreOp})");
@@ -162,6 +183,7 @@ class ExtensionController extends Controller
      */
     public function create()
     {
+        Gate::authorize('manage-system');
         return view('extensions.create');
     }
 
@@ -170,6 +192,7 @@ class ExtensionController extends Controller
      */
     public function store(\App\Http\Requests\StoreExtensionRequest $request)
     {
+        Gate::authorize('manage-system');
         Extension::create([
             'numero'          => $request->numero,
             'descripcion'     => $request->descripcion,
@@ -187,6 +210,7 @@ class ExtensionController extends Controller
      */
     public function edit(Extension $extension)
     {
+        Gate::authorize('manage-system');
         return view('extensions.edit', compact('extension'));
     }
 
@@ -195,11 +219,12 @@ class ExtensionController extends Controller
      */
     public function update(\App\Http\Requests\UpdateExtensionRequest $request, Extension $extension)
     {
+        Gate::authorize('manage-system');
         $extension->update($request->only(['numero', 'descripcion', 'estado', 'grupo_horario']));
 
         // Si se marca manualmente como libre, desvincular operador
         if ($request->estado === 'libre') {
-            $extension->update(['operador_config_id' => null]);
+            $extension->operadores()->detach();
         }
 
         return redirect()->route('extensions.index')->with('success', 'Extensión actualizada exitosamente.');
@@ -208,9 +233,37 @@ class ExtensionController extends Controller
     /**
      * Eliminar extensión.
      */
-    public function destroy(Extension $extension)
+    public function destroy(Extension $extension, Request $request)
     {
-        $extension->delete();
-        return redirect()->route('extensions.index')->with('success', 'Extensión eliminada.');
+        Gate::authorize('manage-system');
+        $isActive = !$extension->is_active;
+        $motivo = $request->input('motivo_inactividad');
+        
+        $extension->update([
+            'is_active' => $isActive,
+            'motivo_inactividad' => $isActive ? null : $motivo
+        ]);
+        
+        $action = $isActive ? 'habilitada' : 'deshabilitada';
+        return redirect()->route('extensions.index')->with('success', "Extensión {$action}.");
+    }
+
+    /**
+     * Habilitar extensión segura con contraseña.
+     */
+    public function enableSecure(Extension $extension, Request $request)
+    {
+        Gate::authorize('manage-system');
+        
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $extension->update([
+            'is_active' => true,
+            'motivo_inactividad' => null
+        ]);
+
+        return redirect()->route('extensions.index')->with('success', "Extensión {$extension->numero} habilitada de forma segura.");
     }
 }

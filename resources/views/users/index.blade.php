@@ -44,6 +44,9 @@
                         <tr class="border-b border-slate-800">
                             <th class="px-6 py-4 text-left">Nombre</th>
                             <th class="px-6 py-4 text-left">Correo Electrónico</th>
+                            @can('manage-system')
+                            <th class="px-6 py-4 text-left">Auditoría de Sesión</th>
+                            @endcan
                             <th class="px-6 py-4 text-center">Rol</th>
                             <th class="px-6 py-4 text-center">Acciones</th>
                         </tr>
@@ -53,10 +56,22 @@
                         <tr class="hover:bg-slate-50 transition even:bg-slate-50/50 odd:bg-white">
                             <td class="px-6 py-4 font-bold text-slate-700">{{ $user->name }}</td>
                             <td class="px-6 py-4 text-slate-500 font-medium">{{ $user->email }}</td>
+                            @can('manage-system')
+                            <td class="px-6 py-4 text-slate-500 text-[11px] space-y-1">
+                                <div><strong class="text-slate-700">IP:</strong> {{ $user->last_login_ip ?? 'N/A' }}</div>
+                                <div class="text-emerald-600"><strong class="text-slate-700">In:</strong> {{ $user->last_login_at ? $user->last_login_at->format('d/m/Y H:i:s') : 'N/A' }}</div>
+                                <div class="text-amber-600"><strong class="text-slate-700">Out:</strong> {{ $user->last_logout_at ? $user->last_logout_at->format('d/m/Y H:i:s') : 'N/A' }}</div>
+                            </td>
+                            @endcan
                             <td class="px-6 py-4 text-center">
                                 <span class="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border {{ $user->isAdmin() ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200' }}">
                                     {{ $user->isAdmin() ? 'Administrador' : 'Usuario' }}
                                 </span>
+                                @if(!$user->is_active)
+                                <span class="ml-2 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border bg-red-100 text-red-800 border-red-200">
+                                    Inactivo
+                                </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center items-center gap-2">
@@ -67,12 +82,12 @@
                                             Editar
                                         </a>
                                         
-                                        <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este usuario?');" class="inline">
+                                        <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas {{ $user->is_active ? 'deshabilitar' : 'habilitar' }} este usuario?');" class="inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" 
-                                                    class="inline-flex items-center bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition border border-red-200/50">
-                                                Eliminar
+                                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition border {{ $user->is_active ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200/50' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/50' }}">
+                                                {{ $user->is_active ? 'Deshabilitar' : 'Habilitar' }}
                                             </button>
                                         </form>
                                     @else

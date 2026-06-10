@@ -115,6 +115,25 @@ services:
     networks:
       - pbx_network
 
+  # Servidor Vite (Compilación de Frontend)
+  pbx_vite:
+    build:
+      context: ./docker/8.2
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: pbx_vite_container
+    restart: always
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - WWWUSER=${WWWUSER:-1000}
+    networks:
+      - pbx_network
+
 networks:
   pbx_network:
     driver: bridge

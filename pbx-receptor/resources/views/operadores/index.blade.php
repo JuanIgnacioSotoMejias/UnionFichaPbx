@@ -57,6 +57,15 @@
                 <span class="px-2 py-0.5 rounded-full text-[9px] bg-blue-600 text-white">{{ $ext->operadores->count() }}/12</span>
             </button>
             @endforeach
+
+            @if($operadoresDeshabilitados->count() > 0)
+            <button @click="activeTab = 'deshabilitados'" 
+                    :class="activeTab === 'deshabilitados' ? 'bg-red-600 text-white' : 'bg-white text-red-600 hover:bg-red-50 border border-red-200'"
+                    class="px-4 py-2 rounded-t-xl font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
+                Personal Deshabilitado
+                <span class="px-2 py-0.5 rounded-full text-[9px] bg-red-800 text-white">{{ $operadoresDeshabilitados->count() }}</span>
+            </button>
+            @endif
         </div>
 
         {{-- Contenedor de las Tablas --}}
@@ -79,6 +88,19 @@
                 @include('operadores._tabla', ['operadores' => $ext->operadores, 'contexto' => 'ext_'.$ext->numero])
             </div>
             @endforeach
+
+            {{-- Pestaña: Deshabilitados --}}
+            @if($operadoresDeshabilitados->count() > 0)
+            <div x-show="activeTab === 'deshabilitados'" style="display: none;" class="overflow-x-auto">
+                <div class="bg-red-50 border-b border-red-200 p-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-black text-red-800 uppercase tracking-tight">Personal Deshabilitado</h3>
+                        <p class="text-xs text-red-500 font-medium mt-1">Operadores y despachadores que han sido desactivados del sistema.</p>
+                    </div>
+                </div>
+                @include('operadores._tabla', ['operadores' => $operadoresDeshabilitados, 'contexto' => 'deshabilitados'])
+            </div>
+            @endif
 
         </div>
 

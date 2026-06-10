@@ -101,6 +101,11 @@ class FreePbxService
             return true;
         }
 
+        // Si tenemos un registro en cache de que está offline, evitamos hacer la petición real
+        if (Cache::has('freepbx_offline_since')) {
+            return false;
+        }
+
         $timeout = (int) config('services.freepbx.health_check_timeout', 3);
         
         try {
@@ -112,9 +117,24 @@ class FreePbxService
                     'query' => '{ fetchAllExtensions { extension { extensionId } } }'
                 ]);
 
-            return $response->successful();
+            if ($response->successful()) {
+                // Si la conexión es exitosa, nos aseguramos de borrar el estado de offline
+                Cache::forget('freepbx_offline_since');
+                return true;
+            }
+
+            // Si falla la petición HTTP, marcar como offline por 1 hora (3600s)
+            Cache::put('freepbx_offline_since', now()->timestamp, 3600);
+            return false;
         } catch (Throwable $e) {
-            Log::warning('[FreePBX] Excepción de red en Health Check HTTPS: ' . $e->getMessage());
+            // Si hay una excepción, marcar como offline por 1 hora (3600s)
+            Cache::put('freepbx_offline_since', now()->timestamp, 3600);
+            
+            // Throttle de 60 segundos para evitar spam de warnings
+            if (!Cache::has('freepbx_log_throttle')) {
+                Log::warning('[FreePBX] Excepción de red en Health Check HTTPS: ' . $e->getMessage());
+                Cache::put('freepbx_log_throttle', true, 60);
+            }
             return false;
         }
     }

@@ -21,18 +21,30 @@ class OperadorController extends Controller
      */
     public function index(): View
     {
-        // Operadores sin ninguna extensión (Disponibles) — Con eager loading
-        $operadoresDisponibles = OperadorConfig::with('extensiones')->doesntHave('extensiones')->orderBy('nombre_operador')->get();
+        // Operadores sin ninguna extensión (Disponibles) — Con eager loading y filtrando por activos
+        $operadoresDisponibles = OperadorConfig::with('extensiones')
+            ->where('is_active', true)
+            ->doesntHave('extensiones')
+            ->orderBy('nombre_operador')
+            ->get();
         
-        // Extensiones con sus operadores asignados
+        // Extensiones con sus operadores asignados (filtrando por activos)
         $extensionesConOperadores = Extension::with(['operadores' => function ($q) {
-            $q->orderBy('nombre_operador');
-        }])->has('operadores')->orderBy('numero')->get();
+            $q->where('operadores_config.is_active', true)->orderBy('nombre_operador');
+        }])->whereHas('operadores', function ($q) {
+            $q->where('operadores_config.is_active', true);
+        })->orderBy('numero')->get();
 
         // Todas las extensiones para el select/modal de asignación
         $extensionesTotales = Extension::orderBy('numero')->get();
 
-        return view('operadores.index', compact('operadoresDisponibles', 'extensionesConOperadores', 'extensionesTotales'));
+        // Operadores deshabilitados
+        $operadoresDeshabilitados = OperadorConfig::with('extensiones')
+            ->where('is_active', false)
+            ->orderBy('nombre_operador')
+            ->get();
+
+        return view('operadores.index', compact('operadoresDisponibles', 'extensionesConOperadores', 'extensionesTotales', 'operadoresDeshabilitados'));
     }
 
     /**

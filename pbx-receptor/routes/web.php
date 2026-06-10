@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::post('extensions/{extension}/enable-secure', [ExtensionController::class, 'enableSecure'])->name('extensions.enableSecure');
 
     // Operators CRUD and toggle
+    Route::post('operadores/sincronizar-ficha', [OperadorController::class, 'sincronizarDesdeFicha'])->name('operadores.sincronizarFicha');
     Route::resource('operadores', OperadorController::class);
     Route::post('operadores/{operador}/toggle', [OperadorController::class, 'toggleActivo'])->name('operadores.toggleActivo');
 

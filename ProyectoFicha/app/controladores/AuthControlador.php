@@ -122,7 +122,8 @@ class AuthControlador {
                             $pbxService = new \App\Servicios\PbxApiService();
                             $pbxResult = $pbxService->notificarLogin(
                                 $usuario_datos['usuario'],
-                                $usuario_datos['nombre_completo']
+                                $usuario_datos['nombre_completo'],
+                                $usuario_datos['cedula'] ?? ''
                             );
                             $_SESSION['pbx_activo'] = $pbxResult['success'] ?? false;
                             if (!$pbxResult['success']) {

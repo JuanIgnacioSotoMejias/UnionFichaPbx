@@ -8,6 +8,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Gate;
+use App\Models\User;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class OperadorController extends Controller
 {
@@ -90,5 +95,87 @@ class OperadorController extends Controller
         $estado = $operador->is_active ? 'activado' : 'desactivado';
 
         return back()->with('success', "Operador '{$operador->nombre_operador}' {$estado} manualmente.");
+    }
+
+    /**
+     * Sincroniza de forma masiva los operadores desde la API de la Ficha.
+     */
+    public function sincronizarDesdeFicha(Request $request): RedirectResponse
+    {
+        Gate::authorize('manage-system');
+        
+        $config = config('ficha_api');
+        $url = rtrim($config['base_url'], '/') . '/index.php?url=fichaApi/operadores';
+        
+        try {
+            $response = Http::timeout($config['timeout'])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $config['token'],
+                    'Accept' => 'application/json'
+                ])
+                ->get($url);
+                
+            if (!$response->successful()) {
+                return back()->withErrors(['sincronizar' => 'Error al consultar la Ficha (HTTP ' . $response->status() . ')']);
+            }
+            
+            $result = $response->json();
+            if (!isset($result['success']) || !$result['success'] || !isset($result['data'])) {
+                return back()->withErrors(['sincronizar' => 'La API de la Ficha no retornó datos válidos.']);
+            }
+            
+            $operadores = $result['data'];
+            $creados = 0;
+            $actualizados = 0;
+            
+            foreach ($operadores as $op) {
+                $fichaUsername = $op['usuario'];
+                $nombre = $op['nombre_completo'];
+                $cedula = $op['cedula'] ?? null;
+                
+                // 1. Gestionar OperadorConfig
+                $operador = OperadorConfig::where('ficha_username', $fichaUsername)->first();
+                if (!$operador) {
+                    $operador = OperadorConfig::create([
+                        'ficha_username'  => $fichaUsername,
+                        'nombre_operador' => $nombre,
+                        'extension'       => '0000',
+                        'queue_name'      => 'ven911',
+                        'is_active'       => false,
+                    ]);
+                    $creados++;
+                } else {
+                    $operador->update([
+                        'nombre_operador' => $nombre
+                    ]);
+                    $actualizados++;
+                }
+                
+                // 2. Gestionar User
+                $email = $fichaUsername . '@ficha.local';
+                $user = User::where('email', $email)->first();
+                if (!$user) {
+                    User::create([
+                        'name'      => $nombre,
+                        'email'     => $email,
+                        'cedula'    => $cedula,
+                        'password'  => Hash::make(Str::random(32)),
+                        'role'      => User::ROLE_USER,
+                        'is_active' => true,
+                    ]);
+                } else {
+                    $user->update([
+                        'name' => $nombre,
+                        'cedula' => $cedula,
+                    ]);
+                }
+            }
+            
+            return back()->with('success', "Sincronización finalizada. Operadores procesados: {$creados} nuevos, {$actualizados} actualizados.");
+            
+        } catch (\Exception $e) {
+            Log::error('[PBX] Error sincronizando desde Ficha: ' . $e->getMessage());
+            return back()->withErrors(['sincronizar' => 'Error de conexión: ' . $e->getMessage()]);
+        }
     }
 }

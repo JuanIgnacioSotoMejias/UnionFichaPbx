@@ -585,4 +585,22 @@ class UsuarioModelo {
             return 0;
         }
     }
+
+    /**
+     * Retorna todos los operadores activos (rol_id = 2 y estado = 'activo').
+     */
+    public function obtenerOperadoresActivos(): array {
+        try {
+            $query = "SELECT usuario, nombre_completo, cedula, rol_id, estado 
+                      FROM {$this->table_name} 
+                      WHERE rol_id = 2 AND estado = 'activo'
+                      ORDER BY nombre_completo ASC";
+            $stmt = $this->conexion->prepare($query);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("[UsuarioModelo] Error en obtenerOperadoresActivos: " . $e->getMessage());
+            return [];
+        }
+    }
 }

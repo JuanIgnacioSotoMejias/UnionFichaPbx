@@ -76,13 +76,15 @@ class PbxApiService {
      *
      * @param string $usuario Nombre de usuario en el sistema Ficha (ficha_username).
      * @param string $nombre Nombre completo del operador.
+     * @param string $cedula Cédula de identidad del operador.
      * @return array
      */
-    public function notificarLogin(string $usuario, string $nombre): array {
+    public function notificarLogin(string $usuario, string $nombre, string $cedula = ''): array {
         return $this->enviarPeticion('sesion', [
             'usuario' => $usuario,
             'evento'  => 'LOGIN',
             'nombre'  => $nombre,
+            'cedula'  => $cedula,
             'cola'    => $this->config['cola_default']
         ]);
     }

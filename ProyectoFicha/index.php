@@ -102,7 +102,7 @@ $autenticado = isset($_SESSION['user_id']);
 $metodo      = $segmentos[1] ?? '';
 
 // Redirección forzosa si intenta acceder al sistema sin estar logueado
-if (!$autenticado && !in_array($nombreBase, ['Auth', 'Registro'])) {
+if (!$autenticado && !in_array($nombreBase, ['Auth', 'Registro', 'FichaApi'])) {
     header('Location: index.php?url=auth');
     exit;
 }

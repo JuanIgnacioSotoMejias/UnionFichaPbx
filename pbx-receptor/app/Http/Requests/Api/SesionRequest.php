@@ -34,6 +34,7 @@ class SesionRequest extends FormRequest
             'extension' => ['sometimes', 'string', 'regex:/^\d{3,6}$/'],
             'cola'      => ['sometimes', 'string', 'max:20', 'regex:/^[a-zA-Z0-9_-]+$/'],
             'nombre'    => ['sometimes', 'string', 'max:120'],
+            'cedula'    => ['sometimes', 'nullable', 'string', 'max:30'],
             'hora_inicio_esperada' => ['sometimes', 'date_format:H:i:s'],
             'hora_fin_esperada'    => ['sometimes', 'date_format:H:i:s'],
         ];

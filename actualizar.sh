@@ -10,6 +10,26 @@ echo "=== 1. Iniciando descarga de cambios desde Git ==="
 cd ~/UnionFichaPbx
 git pull
 
+echo "=== 1.5. Instalando dependencias de Composer dentro del contenedor ==="
+docker exec -i pbx_app_container composer install --no-interaction --optimize-autoloader
+
+echo "=== 1.6. Parcheando compatibilidad de PHP 8 en la librería PAMI ==="
+docker exec -i pbx_app_container php << 'EOF'
+<?php
+$file = "/var/www/html/vendor/marcelog/pami/src/PAMI/Message/Event/Factory/Impl/EventFactoryImpl.php";
+if (file_exists($file)) {
+    $content = file_get_contents($file);
+    if (strpos($content, "implode(\$parts, '')") !== false) {
+        $content = str_replace("implode(\$parts, '')", "implode('', \$parts)", $content);
+        file_put_contents($file, $content);
+        echo "Parche de PAMI aplicado con éxito.\n";
+    } else {
+        echo "PAMI ya está parchado o no requiere cambios.\n";
+    }
+}
+EOF
+
+
 echo "=== 2. Eliminando archivos antiguos de producción en Apache ==="
 # Eliminamos de forma explícita el archivo 'hot' (que le dice a Laravel que use el
 # servidor de desarrollo de Vite) y la carpeta antigua de builds.

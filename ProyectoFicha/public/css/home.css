@@ -1,0 +1,591 @@
+/* Custom Dashboard Theme for VEN 911 */
+
+:root {
+  --ven-primary: #16a34a;       /* Verde Principal */
+  --ven-primary-hover: #15803d; /* Verde Hover */
+  --ven-dark: #064e3b;          /* Verde Pino (Sidebar/Brand) */
+  --ven-accent: #22c55e;        /* Verde Acento */
+  --ven-bg-soft: #f0fdf4;       /* Fondo suave verdoso */
+}
+
+
+/* Sidebar Branding Refined */
+.sidebar-brand {
+  height: auto !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: linear-gradient(135deg, rgba(6, 78, 59, 1) 0%, rgba(2, 28, 18, 1) 100%) !important;
+}
+
+.brand-link {
+  height: 90px !important; 
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important; /* Centrado total al desaparecer el logo */
+  padding: 0 !important; 
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.brand-image {
+  display: none !important; /* Asegurar que el logo desaparezca por CSS también */
+}
+
+.brand-text {
+  margin-left: 0 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; /* Alinear ejes al centro */
+  line-height: 1; 
+}
+
+.brand-text-main {
+  font-size: 2.1rem !important; /* Tamaño masivo exclusivo para el texto */
+  font-weight: 900 !important; /* Extra bold institucional */
+  color: #ffffff !important;
+  letter-spacing: 1px; /* Limpio, sin sombras ruidosas */
+  text-shadow: none; 
+  display: block;
+}
+
+.brand-text-sub {
+  font-weight: 400 !important; /* Delgado para contrastar el grueso de arriba */
+  font-size: 0.8rem !important;
+  color: var(--ven-accent) !important; 
+  text-transform: uppercase;
+  letter-spacing: 12px; /* Tracking extremo (High-end UI trend) */
+  margin-top: 8px; /* Darle respiro */
+  margin-right: -12px; /* Corrección óptica por el tracking para evitar que se descuadre del centro */
+  display: block;
+  opacity: 0.8;
+}
+
+/* Home Dashboard Header Logo */
+.home-hero-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  margin-bottom: 20px;
+}
+
+.home-hero-logo {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.home-hero-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ven-dark);
+  letter-spacing: -0.5px;
+}
+
+.home-hero-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Sidebar Background */
+.app-sidebar {
+  background-color: #042f24 !important;
+  overflow-x: hidden !important;
+}
+
+/* Active Menu Items */
+.sidebar-menu .nav-link {
+  padding: 0.6rem 1rem 0.6rem 0.6rem !important;
+  margin: 1px 6px 1px 4px !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-menu .nav-link.active {
+  background: linear-gradient(135deg, var(--ven-primary) 0%, var(--ven-primary-hover) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.3);
+}
+
+.sidebar-menu .nav-link.active .nav-icon {
+  color: #ffffff !important;
+}
+
+.sidebar-menu .nav-link:hover {
+  background-color: rgba(34, 197, 94, 0.12) !important;
+  color: var(--ven-accent) !important;
+}
+
+.sidebar-menu .nav-link:hover .nav-icon {
+  color: var(--ven-accent) !important;
+}
+
+/* Navbar Personalization */
+.app-header.navbar {
+  background-color: #ffffff !important;
+  border-bottom: 2px solid var(--ven-primary) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+.app-header .nav-link {
+  color: var(--ven-dark) !important;
+  font-weight: 500;
+}
+
+.app-header .nav-link i {
+  color: var(--ven-primary) !important;
+  margin-right: 4px;
+}
+
+.app-header .nav-link:hover {
+  color: var(--ven-primary) !important;
+}
+
+.app-header .nav-link:hover i {
+  color: var(--ven-primary-hover) !important;
+}
+
+/* Card Header Accent */
+.card {
+  border-radius: 0.75rem !important;
+  border: none !important;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.card-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+  padding: 1rem 1.25rem !important;
+}
+
+.card-title {
+  color: var(--ven-dark) !important;
+  font-weight: 700 !important;
+}
+
+/* Breadcrumbs */
+.breadcrumb-item a {
+  color: var(--ven-primary) !important;
+  text-decoration: none;
+}
+
+.breadcrumb-item.active {
+  color: var(--ven-dark) !important;
+}
+
+/* Forzar encabezados a Negro */
+h1, h2, h3, h4, h5, h6, .brand-text {
+  color: #000000 !important;
+}
+
+/* Sidebar Brand Text (Excepción para que sea legible sobre verde oscuro) */
+.brand-link .brand-text {
+  color: #ffffff !important;
+}
+
+/* User Profile Header */
+.user-header {
+  background-color: var(--ven-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Footer Colors */
+.app-footer {
+  border-top: 1px solid rgba(0,0,0,0.05) !important;
+  color: #6c757d !important;
+}
+
+.app-footer a {
+  color: var(--ven-primary) !important;
+  font-weight: 600;
+}
+
+.app-footer a:hover {
+  color: var(--ven-primary-hover) !important;
+}
+
+/* Floating Help Button */
+.btn-floating-help {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 55px;
+  height: 55px;
+  background-color: var(--ven-primary) !important;
+  color: #ffffff !important;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: help;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-decoration: none !important;
+}
+
+.btn-floating-help i {
+  color: #ffffff !important;
+  font-size: 1.8rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-floating-help:hover {
+  transform: scale(1.1) translateY(-5px);
+  background-color: var(--ven-accent) !important;
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.4);
+}
+
+.btn-floating-help:hover i {
+  color: #ffffff !important;
+}
+
+/* Sidebar Footer Adjustments */
+/* Sidebar Fix: Elastic Flexbox (No sub-pixel gaps) */
+.app-sidebar {
+  background-color: #042f24 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  width: 280px !important; /* Incrementado para evitar scroll horizontal */
+  position: sticky !important;
+  top: 0;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+}
+
+.sidebar-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  background-color: transparent !important;
+  min-height: 0 !important;
+  width: 100% !important;
+}
+
+/* Solo esta área hace scroll */
+.sidebar-scroll-area {
+  flex: 1 1 auto !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+}
+
+.sidebar-scroll-area nav {
+  display: block !important;
+}
+
+/* Bloque inferior siempre pegado al fondo del sidebar */
+.sidebar-sticky-footer {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+  background-color: #042f24;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-footer-nav {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 8px 0 !important;
+  background-color: #042f24 !important;
+}
+
+.sidebar-footer-nav .nav-link {
+  padding: 0.5rem 1rem !important;
+  margin: 1px 8px !important;
+  border-radius: 8px !important;
+  font-size: 0.85rem !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  transition: all 0.2s ease;
+}
+
+.sidebar-footer-nav .nav-link:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Logos institucionales al fondo */
+.sidebar-institutional-logo {
+  padding: 10px 16px 16px;
+  background-color: #042f24;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.sidebar-mijp-logo {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.70; /* Base más nítida */
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-footer-ven-logo {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.70;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.footer-logo-divider {
+  width: 1px;
+  height: 30px; /* Aumentar también la línea separadora en proporción */
+  background: rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+
+.sidebar-mijp-logo:hover,
+.sidebar-footer-ven-logo:hover {
+  opacity: 1; /* Opacidad completa al pasar el mouse */
+  transform: scale(1.05); /* Leve efecto 3D al apuntar */
+}
+
+/* SweetAlert Custom Theme (Global Dashboard) */
+.swal2-confirm {
+  background: linear-gradient(135deg, var(--ven-primary) 0%, var(--ven-primary-hover) 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 600 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1.5rem !important;
+}
+
+.swal2-confirm:hover {
+  background: linear-gradient(135deg, var(--ven-primary-hover) 0%, var(--ven-dark) 100%) !important;
+  transform: translateY(-1px);
+}
+
+.swal2-cancel {
+  background-color: var(--ven-bg-soft) !important;
+  color: var(--ven-dark) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  font-weight: 500 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1.5rem !important;
+}
+
+.swal2-cancel:hover {
+  background-color: #dcfce7 !important;
+}
+
+/* =============================================
+   ARMONÍA DE ICONOS — TEMA GLOBAL
+   ============================================= */
+
+/* Color base para todos los iconos del sistema (Bootstrap Icons & FontAwesome) */
+i.bi, i.fas, i.far, i.fab, i.fa {
+  color: var(--ven-primary);
+  transition: color 0.25s ease, transform 0.2s ease;
+}
+
+/* Excepción: Iconos en botones y elementos de acción principales (blanco para legibilidad) */
+.btn-ven-primary i,
+.btn-ven-edit i,
+.btn-ven-password i,
+.btn-ven-detalle i,
+.btn-danger i,
+.btn-primary i,
+.btn-success i,
+.btn-info i,
+.btn-warning i,
+.btn-dark i,
+.swal2-confirm i {
+  color: #ffffff !important;
+}
+
+/* Excepción: Cabeceras con fondo oscuro gradiente */
+.modal-header-ven i,
+.modal-header-ven .modal-title i,
+.app-sidebar .nav-link.active i {
+  color: #ffffff !important;
+}
+
+/* Excepción: Badges y etiquetas de estado mantienen su diseño interno */
+.badge i, .badge-estado i, .badge-ficha-estado i, .badge-pendiente i, .badge-atendido i {
+  color: inherit !important;
+}
+
+/* Excepción: Sidebar (colores específicos para legibilidad sobre fondo oscuro) */
+.nav-sidebar .nav-link i {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nav-sidebar .nav-link:hover i,
+.nav-sidebar .nav-link.active i {
+  color: #ffffff !important;
+}
+
+/* Iconos de sub-módulos (Anidados) */
+.nav-treeview .nav-link i {
+  color: var(--ven-accent) !important;
+  font-size: 0.82rem;
+}
+
+.nav-treeview .nav-link.active i,
+.nav-treeview .nav-link:hover i {
+  color: #ffffff !important;
+}
+
+/* Guía visual vertical para sub-menús */
+.nav-treeview {
+  border-left: 2px solid rgba(34, 197, 94, 0.15);
+  margin-left: 22px;
+  padding-left: 4px;
+}
+
+.nav-treeview .nav-link {
+  padding: 0.45rem 0.85rem 0.45rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+/* Efecto hover interactivo para iconos que actúan como disparadores */
+.btn-eye:hover i, .btn-toggle-estado:hover i, .btn-accion:hover i {
+  color: var(--ven-primary-hover);
+  transform: scale(1.15);
+}
+
+/* =============================================
+   PERSONALIZACIÓN DE SELECT2 (V3.5 INSTITUCIONAL)
+   ============================================= */
+
+/* 1. Contenedor Principal (Tema Bootstrap 5) */
+.select2-container--bootstrap-5 .select2-selection {
+    border-radius: 8px !important;
+    border: 1px solid #dee2e6 !important;
+    transition: all 0.2s ease-in-out !important;
+    font-size: 0.88rem !important;
+}
+
+/* 2. Estado de Enfoque / Abierto */
+.select2-container--bootstrap-5.select2-container--focus .select2-selection,
+.select2-container--bootstrap-5.select2-container--open .select2-selection {
+    border-color: var(--ven-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(22, 163, 74, 0.15) !important;
+}
+
+/* 3. Lista Desplegable (Dropdown) */
+.select2-container--bootstrap-5 .select2-dropdown {
+    border-radius: 12px !important;
+    border: 1px solid rgba(22, 163, 74, 0.1) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden !important;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+/* 4. Opciones de la Lista (Hover y Selección) */
+.select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected],
+.select2-container--bootstrap-5 .select2-results__option--highlighted.select2-results__option--active {
+    background-color: var(--ven-primary) !important;
+    color: #ffffff !important;
+}
+
+/* 5. Opción Seleccionada (Estado Activo) */
+.select2-container--bootstrap-5 .select2-results__option[aria-selected=true] {
+    background-color: rgba(22, 163, 74, 0.1) !important;
+    color: var(--ven-dark) !important;
+    font-weight: 600 !important;
+}
+
+/* 6. Barra de Búsqueda Interna */
+.select2-container--bootstrap-5 .select2-search__field {
+    border-radius: 6px !important;
+    padding: 0.5rem !important;
+    margin-bottom: 5px !important;
+}
+
+/* 7. Scrollbar Personalizado para Select2 */
+.select2-results__options::-webkit-scrollbar {
+    width: 6px;
+}
+.select2-results__options::-webkit-scrollbar-track {
+    background: transparent;
+}
+.select2-results__options::-webkit-scrollbar-thumb {
+    background: rgba(22, 163, 74, 0.2);
+    border-radius: 10px;
+}
+.select2-results__options::-webkit-scrollbar-thumb:hover {
+    background: var(--ven-primary);
+}
+
+/* =============================================
+   DASHBOARD REFINEMENTS (BOTONES GIGANTES)
+   ============================================= */
+
+.cursor-pointer { cursor: pointer; }
+
+.hover-scale { 
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+
+.hover-scale:hover { 
+    transform: translateY(-5px) scale(1.02); 
+    box-shadow: 0 15px 30px rgba(6, 78, 59, 0.3) !important;
+}
+
+/* Botón de Creación Premium (Flat) */
+.card-btn-crear { 
+    background-color: #16a34a !important; 
+    box-shadow: 0 10px 20px rgba(22, 163, 74, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.1) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-btn-crear:hover {
+    background-color: #15803d !important;
+}
+
+.card-btn-crear h3 {
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-btn-crear p {
+    font-weight: 500 !important;
+    letter-spacing: 0.3px;
+}
+
+.btn-crear-icon {
+    font-size: 4.5rem;
+    color: #ffffff !important;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+    margin-bottom: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Glassmorphism en modales (Asegurar transparencia en Home) */
+.modal-backdrop { 
+    background-color: rgba(6, 78, 59, 0.18) !important; 
+    backdrop-filter: blur(4px) !important; 
+}
+
+.modal-content {
+    border: 1px solid rgba(187, 247, 208, 0.5) !important;
+    backdrop-filter: blur(10px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+}

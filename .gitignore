@@ -1,0 +1,28 @@
+# Dependency directories
+/ProyectoFicha/vendor/
+/pbx-receptor/vendor/
+/pbx-receptor/node_modules/
+
+# Environment files
+/pbx-receptor/.env
+/pbx-receptor/.env.backup
+/pbx-receptor/.env.production
+
+# IDEs
+.idea/
+.vscode/
+
+# System files & logs
+.DS_Store
+Thumbs.db
+error_log
+php_errors.log
+/pbx-receptor/storage/*.key
+/pbx-receptor/storage/logs/*.log
+/ProyectoFicha/storage/cache/*.cache
+/ProyectoFicha/storage/cache/*.json
+.phpunit.result.cache
+
+# Temp / Compressed files
+actualizacion.7z
+actualizacion/

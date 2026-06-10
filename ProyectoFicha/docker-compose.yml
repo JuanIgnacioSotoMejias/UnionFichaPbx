@@ -1,0 +1,133 @@
+version: '3.8'
+
+# NOTA DE COEXISTENCIA POR IP:
+# Este proyecto (ProyectoFicha) escucha exclusivamente en la IP 172.16.80.239 (puerto 80).
+# El proyecto hermano (pbx-receptor) escucha exclusivamente en la IP 172.16.80.240 (puerto 80).
+
+services:
+  # Servidor Web y Aplicación
+  ven911_app:
+    image: ven911_custom_image:latest
+    build: .
+    container_name: ven911_web
+    restart: always
+    ports:
+      - "172.16.80.239:80:80" # Escucha solo en la IP asignada a Ficha
+    volumes:
+      - .:/var/www/html
+
+    environment:
+      - DB_HOST=ven911_db
+      - DB_NAME=ficha_ven_911
+      - DB_USER=ven911_user
+      - DB_PASS=ven911_secure_pass
+      - WS_INTERNAL_HOST=ven911_sockets
+      - RABBITMQ_HOST=ven911_rabbit
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=ven911
+      - RABBITMQ_PASS=ven911_mq_pass
+      - RABBITMQ_QUEUE=notificaciones
+    depends_on:
+      ven911_db:
+        condition: service_started
+      ven911_rabbit:
+        condition: service_healthy
+    networks:
+      - ven911_network
+
+  # Base de Datos (MariaDB)
+  ven911_db:
+    image: mariadb:10.11
+    container_name: ven911_mysql
+    restart: always
+    environment:
+      - MARIADB_DATABASE=ficha_ven_911
+      - MARIADB_USER=ven911_user
+      - MARIADB_PASSWORD=ven911_secure_pass
+      - MARIADB_ROOT_PASSWORD=root_secure_pass
+    volumes:
+      - ven911_db_data:/var/lib/mysql
+    networks:
+      - ven911_network
+
+  # Servidor de WebSockets (Independiente)
+  ven911_ws:
+    image: ven911_custom_image:latest
+    build: .
+    container_name: ven911_sockets
+    restart: always
+    command: php /var/www/html/app/bin/servidor_ws.php
+    ports:
+      - "172.16.80.239:8080:8080"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - ven911_db
+    networks:
+      - ven911_network
+
+  # Broker de Mensajería (RabbitMQ)
+  ven911_rabbit:
+    image: rabbitmq:3.13-management-alpine
+    container_name: ven911_rabbit
+    restart: always
+    ports:
+      - "172.16.80.239:15672:15672"   # Panel de administración (solo para diagnóstico interno)
+    environment:
+      - RABBITMQ_DEFAULT_USER=ven911
+      - RABBITMQ_DEFAULT_PASS=ven911_mq_pass
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ven911_network
+
+  # Worker Consumer: Lee la cola de RabbitMQ y entrega al bus WS
+  ven911_consumer:
+    image: ven911_custom_image:latest
+    build: .
+    container_name: ven911_consumer
+    restart: always
+    command: php /var/www/html/app/bin/consumidor_notif.php
+    volumes:
+      - .:/var/www/html
+    environment:
+      - RABBITMQ_HOST=ven911_rabbit
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=ven911
+      - RABBITMQ_PASS=ven911_mq_pass
+      - RABBITMQ_QUEUE=notificaciones
+      - WS_INTERNAL_HOST=ven911_sockets
+    depends_on:
+      ven911_rabbit:
+        condition: service_healthy
+      ven911_ws:
+        condition: service_started
+    networks:
+      - ven911_network
+
+  # phpMyAdmin para acceder a la base de datos desde la web
+  ven911_phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: ven911_phpmyadmin
+    restart: always
+    ports:
+      - "172.16.80.239:8081:80"
+    environment:
+      - PMA_HOST=ven911_db
+      - PMA_USER=ven911_user
+      - PMA_PASSWORD=ven911_secure_pass
+      - PMA_ROOT_PASSWORD=root_secure_pass
+    depends_on:
+      - ven911_db
+    networks:
+      - ven911_network
+
+networks:
+  ven911_network:
+    driver: bridge
+
+volumes:
+  ven911_db_data:

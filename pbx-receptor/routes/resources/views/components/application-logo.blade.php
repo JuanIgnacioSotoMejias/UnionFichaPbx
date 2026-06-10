@@ -1,0 +1,1 @@
+<img src="/img/logo_ven911.png" alt="VEN-911" {{ $attributes->merge(['class' => 'h-12 w-auto']) }}>

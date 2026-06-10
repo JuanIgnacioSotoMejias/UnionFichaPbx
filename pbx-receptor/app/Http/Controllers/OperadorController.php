@@ -84,13 +84,18 @@ class OperadorController extends Controller
             });
         }
 
+        // Copiar la primera extensión asignada a la columna base para facilitar consultas directas
+        $primeraExtension = Extension::whereIn('id', $extIds)->first();
+        $extensionBase = $primeraExtension ? $primeraExtension->numero : '0000';
+
         // Actualizar datos base del operador
         $operador->update([
-            'grupo_horario' => $grupoHorario,
-            'horario_turno' => $request->input('horario_turno'),
+            'extension'      => $extensionBase,
+            'grupo_horario'  => $grupoHorario,
+            'horario_turno'  => $request->input('horario_turno'),
             'horario_comida' => $request->input('horario_comida'),
             'horario_descanso' => $request->input('horario_descanso'),
-            'is_active'     => $request->input('is_active'),
+            'is_active'      => $request->input('is_active'),
         ]);
 
         return redirect()->route('operadores.index')->with('success', 'Operador actualizado exitosamente.');

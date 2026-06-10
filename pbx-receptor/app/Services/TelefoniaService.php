@@ -8,10 +8,6 @@ use App\Models\OperadorConfig;
 use App\Models\OperadorSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-
 class TelefoniaService
 {
     public function __construct(
@@ -49,23 +45,6 @@ class TelefoniaService
             if (!empty($updateData)) {
                 $operador->update($updateData);
             }
-        }
-
-        // Asegurar el User correspondiente
-        $email = $fichaUsername . '@ficha.local';
-        $user = User::where('email', $email)->first();
-        if (!$user) {
-            User::create([
-                'name'      => $nombrePayload ?? $fichaUsername,
-                'email'     => $email,
-                'cedula'    => $request->input('cedula'),
-                'password'  => Hash::make(Str::random(32)),
-                'role'      => User::ROLE_USER,
-                'is_active' => true,
-            ]);
-            Log::info("[TelefoniaService] Auto-registro de User web para operador: {$fichaUsername}");
-        } elseif ($request->has('cedula') && $user->cedula !== $request->input('cedula')) {
-            $user->update(['cedula' => $request->input('cedula')]);
         }
 
         return $operador;

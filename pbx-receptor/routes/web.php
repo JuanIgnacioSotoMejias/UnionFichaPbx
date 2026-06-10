@@ -38,7 +38,9 @@ Route::middleware('auth')->group(function () {
 
     // Operators CRUD and toggle
     Route::post('operadores/sincronizar-ficha', [OperadorController::class, 'sincronizarDesdeFicha'])->name('operadores.sincronizarFicha');
-    Route::resource('operadores', OperadorController::class);
+    Route::resource('operadores', OperadorController::class)->parameters([
+        'operadores' => 'operador'
+    ]);
     Route::post('operadores/{operador}/toggle', [OperadorController::class, 'toggleActivo'])->name('operadores.toggleActivo');
 
     // Users management

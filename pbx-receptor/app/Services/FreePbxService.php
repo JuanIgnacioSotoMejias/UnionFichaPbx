@@ -123,12 +123,12 @@ class FreePbxService
                 return true;
             }
 
-            // Si falla la petición HTTP, marcar como offline por 1 hora (3600s)
-            Cache::put('freepbx_offline_since', now()->timestamp, 3600);
+            // Si falla la petición HTTP, marcar como offline por 60 segundos
+            Cache::put('freepbx_offline_since', now()->timestamp, 60);
             return false;
         } catch (Throwable $e) {
-            // Si hay una excepción, marcar como offline por 1 hora (3600s)
-            Cache::put('freepbx_offline_since', now()->timestamp, 3600);
+            // Si hay una excepción, marcar como offline por 60 segundos
+            Cache::put('freepbx_offline_since', now()->timestamp, 60);
             
             // Throttle de 60 segundos para evitar spam de warnings
             if (!Cache::has('freepbx_log_throttle')) {

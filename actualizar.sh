@@ -10,10 +10,20 @@ echo "=== 1. Iniciando descarga de cambios desde Git ==="
 cd ~/UnionFichaPbx
 git pull
 
-echo "=== 1.5. Instalando dependencias de Composer dentro del contenedor ==="
+echo "=== 2. Copiando el código actualizado a la ruta de Apache ==="
+# Copiamos todo el contenido actualizado
+sudo cp -r ~/UnionFichaPbx/pbx-receptor/* /opt/lampp/htdocs/pbx-receptor/
+
+echo "=== 2.5. Eliminando archivos obsoletos de compilación en caliente ==="
+# Eliminamos de forma explícita el archivo 'hot' (que le dice a Laravel que use el
+# servidor de desarrollo de Vite) y la carpeta antigua de builds.
+sudo rm -f /opt/lampp/htdocs/pbx-receptor/public/hot
+sudo rm -rf /opt/lampp/htdocs/pbx-receptor/public/build
+
+echo "=== 3. Instalando dependencias de Composer dentro del contenedor ==="
 docker exec -i pbx_app_container composer install --no-interaction --optimize-autoloader
 
-echo "=== 1.6. Parcheando compatibilidad de PHP 8 en la librería PAMI ==="
+echo "=== 3.5. Parcheando compatibilidad de PHP 8 en la librería PAMI ==="
 docker exec -i pbx_app_container php << 'EOF'
 <?php
 $file = "/var/www/html/vendor/marcelog/pami/src/PAMI/Message/Event/Factory/Impl/EventFactoryImpl.php";
@@ -28,17 +38,6 @@ if (file_exists($file)) {
     }
 }
 EOF
-
-
-echo "=== 2. Eliminando archivos antiguos de producción en Apache ==="
-# Eliminamos de forma explícita el archivo 'hot' (que le dice a Laravel que use el
-# servidor de desarrollo de Vite) y la carpeta antigua de builds.
-sudo rm -f /opt/lampp/htdocs/pbx-receptor/public/hot
-sudo rm -rf /opt/lampp/htdocs/pbx-receptor/public/build
-
-echo "=== 3. Copiando el código actualizado a la ruta de Apache ==="
-# Copiamos todo el contenido actualizado antes de compilar
-sudo cp -r ~/UnionFichaPbx/pbx-receptor/* /opt/lampp/htdocs/pbx-receptor/
 
 echo "=== 4. Compilando assets de frontend dentro del contenedor Docker ==="
 # npm run build se ejecuta dentro de la carpeta /var/www/html del contenedor,

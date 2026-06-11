@@ -1,0 +1,139 @@
+
+services:
+  # Aplicación Laravel (Web)
+  pbx_app:
+    build:
+      context: ./docker/8.2
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: pbx_app_container
+    restart: always
+    ports:
+      - "172.16.80.240:80:80" # Acceso web en puerto 80 sobre la IP asignada
+    volumes:
+      - .:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://172.16.80.240
+      - DB_HOST=pbx_db
+      - DB_DATABASE=pbx_middleware
+      - DB_USERNAME=pbx_user
+      - DB_PASSWORD=user_password_segura
+      - REVERB_HOST=pbx_reverb
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+    depends_on:
+      - pbx_db
+    networks:
+      - pbx_network
+
+  # Base de Datos (MariaDB)
+  pbx_db:
+    image: mariadb:latest
+    container_name: pbx_db_container
+    restart: always
+    environment:
+      MYSQL_DATABASE: pbx_middleware
+      MYSQL_ROOT_PASSWORD: root_password_segura
+      MYSQL_USER: pbx_user
+      MYSQL_PASSWORD: user_password_segura
+    ports:
+      - "172.16.80.240:3306:3306" # Mapeado a 3306 sobre la IP dedicada
+    volumes:
+      - ./docker-data/db:/var/lib/mysql
+    networks:
+      - pbx_network
+
+  # Servidor Reverb (WebSockets Laravel)
+  pbx_reverb:
+    build:
+      context: ./docker/8.2
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: pbx_reverb_container
+    restart: always
+    command: php /var/www/html/artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "172.16.80.240:8080:8080" # Acceso WebSockets en puerto 8080 sobre la IP dedicada
+    volumes:
+      - .:/var/www/html
+    environment:
+      - WWWUSER=${WWWUSER:-1000}
+      - SUPERVISOR_PHP_USER=root
+      - DB_HOST=pbx_db
+      - DB_DATABASE=pbx_middleware
+      - DB_USERNAME=pbx_user
+      - DB_PASSWORD=user_password_segura
+      - REVERB_APP_ID=784512
+      - REVERB_APP_KEY=pbxtrxreverbkey
+      - REVERB_APP_SECRET=reverbsecret
+    depends_on:
+      - pbx_db
+    networks:
+      - pbx_network
+
+  # Worker para procesar Colas en Segundo Plano
+  pbx_worker:
+    build:
+      context: ./docker/8.2
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: pbx_worker_container
+    restart: always
+    command: php /var/www/html/artisan queue:work
+    volumes:
+      - .:/var/www/html
+    environment:
+      - WWWUSER=${WWWUSER:-1000}
+      - SUPERVISOR_PHP_USER=root
+      - DB_HOST=pbx_db
+      - DB_DATABASE=pbx_middleware
+      - DB_USERNAME=pbx_user
+      - DB_PASSWORD=user_password_segura
+    depends_on:
+      - pbx_db
+    networks:
+      - pbx_network
+
+  # phpMyAdmin para acceder a la base de datos desde el navegador
+  pbx_phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: pbx_phpmyadmin_container
+    restart: always
+    ports:
+      - "172.16.80.240:8081:80"
+    environment:
+      - PMA_HOST=pbx_db
+      - PMA_USER=pbx_user
+      - PMA_PASSWORD=user_password_segura
+    depends_on:
+      - pbx_db
+    networks:
+      - pbx_network
+
+  # Servidor Vite (Compilación de Frontend)
+  pbx_vite:
+    build:
+      context: ./docker/8.2
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: pbx_vite_container
+    restart: always
+    command: npm run dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - WWWUSER=${WWWUSER:-1000}
+    networks:
+      - pbx_network
+
+networks:
+  pbx_network:
+    driver: bridge

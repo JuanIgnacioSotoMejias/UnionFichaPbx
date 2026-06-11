@@ -7,6 +7,19 @@
                 <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Gestión de Personal</h2>
                 <p class="text-xs text-slate-400 mt-1">Administra los operadores y su asignación a extensiones (Max 12 por Extensión).</p>
             </div>
+            <div>
+                <form action="{{ route('operadores.sincronizarFicha') }}" method="POST" onsubmit="this.querySelector('button').disabled=true; this.querySelector('.spinner').classList.remove('hidden');">
+                    @csrf
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"/></svg>
+                        Sincronizar desde Ficha
+                        <svg class="spinner hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
         </div>
 
         {{-- Mensajes Flash y Errores --}}
@@ -44,6 +57,15 @@
                 <span class="px-2 py-0.5 rounded-full text-[9px] bg-blue-600 text-white">{{ $ext->operadores->count() }}/12</span>
             </button>
             @endforeach
+
+            @if($operadoresDeshabilitados->count() > 0)
+            <button @click="activeTab = 'deshabilitados'" 
+                    :class="activeTab === 'deshabilitados' ? 'bg-red-600 text-white' : 'bg-white text-red-600 hover:bg-red-50 border border-red-200'"
+                    class="px-4 py-2 rounded-t-xl font-bold uppercase tracking-widest text-[10px] transition-all flex items-center gap-2">
+                Personal Deshabilitado
+                <span class="px-2 py-0.5 rounded-full text-[9px] bg-red-800 text-white">{{ $operadoresDeshabilitados->count() }}</span>
+            </button>
+            @endif
         </div>
 
         {{-- Contenedor de las Tablas --}}
@@ -66,6 +88,19 @@
                 @include('operadores._tabla', ['operadores' => $ext->operadores, 'contexto' => 'ext_'.$ext->numero])
             </div>
             @endforeach
+
+            {{-- Pestaña: Deshabilitados --}}
+            @if($operadoresDeshabilitados->count() > 0)
+            <div x-show="activeTab === 'deshabilitados'" style="display: none;" class="overflow-x-auto">
+                <div class="bg-red-50 border-b border-red-200 p-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-black text-red-800 uppercase tracking-tight">Personal Deshabilitado</h3>
+                        <p class="text-xs text-red-500 font-medium mt-1">Operadores y despachadores que han sido desactivados del sistema.</p>
+                    </div>
+                </div>
+                @include('operadores._tabla', ['operadores' => $operadoresDeshabilitados, 'contexto' => 'deshabilitados'])
+            </div>
+            @endif
 
         </div>
 

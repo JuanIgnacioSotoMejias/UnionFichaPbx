@@ -8,7 +8,6 @@ use App\Models\OperadorConfig;
 use App\Models\OperadorSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
 class TelefoniaService
 {
     public function __construct(
@@ -67,18 +66,25 @@ class TelefoniaService
                 $extensionUsar = $extensionPayload;
                 $operador->update(['extension' => $extensionUsar]);
             } else {
-                $extAutoAsignada = Extension::autoAsignar($operador);
+                // FALLBACK: Verificar primero si tiene extensiones asignadas en la relación muchos a muchos
+                $relationExt = $operador->extensiones()->first();
+                if ($relationExt) {
+                    $extensionUsar = $relationExt->numero;
+                    $operador->update(['extension' => $extensionUsar]);
+                } else {
+                    $extAutoAsignada = Extension::autoAsignar($operador);
 
-                if (!$extAutoAsignada) {
-                    return [
-                        'success' => false,
-                        'status'  => 'ERROR',
-                        'message' => 'No hay extensiones disponibles para asignar al operador.',
-                        'dry_run' => (bool) config('ami.dry_run', false),
-                    ];
+                    if (!$extAutoAsignada) {
+                        return [
+                            'success' => false,
+                            'status'  => 'ERROR',
+                            'message' => 'No hay extensiones disponibles para asignar al operador.',
+                            'dry_run' => (bool) config('ami.dry_run', false),
+                        ];
+                    }
+
+                    $extensionUsar = $extAutoAsignada->numero;
                 }
-
-                $extensionUsar = $extAutoAsignada->numero;
             }
         }
 

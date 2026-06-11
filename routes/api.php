@@ -55,24 +55,10 @@ Route::middleware([
 ])->group(function () {
 
     // Heartbeat endpoint for active operator sessions
-    Route::middleware([
-        'auth:sanctum',
-        'force.json',
-        'sanitize.input',
-        'receptor.ips',
-        'receptor.token',
-        'throttle:' . env('RECEPTOR_RATE_LIMIT', 60) . ',1',
-    ])->post('/heartbeat', [\App\Http\Controllers\Api\TelefoniaController::class, 'heartbeat'])->name('api.heartbeat');
+    Route::post('/heartbeat', [\App\Http\Controllers\Api\TelefoniaController::class, 'heartbeat'])->name('api.heartbeat');
 
     // Log endpoint for API error reporting
-    Route::middleware([
-        'auth:sanctum',
-        'force.json',
-        'sanitize.input',
-        'receptor.ips',
-        'receptor.token',
-        'throttle:' . env('RECEPTOR_RATE_LIMIT', 60) . ',1',
-    ])->post('/log', [\App\Http\Controllers\Api\LogController::class, 'store'])->name('api.log');
+    Route::post('/log', [\App\Http\Controllers\Api\LogController::class, 'store'])->name('api.log');
 
     // Estado del servicio y conexión AMI
     Route::get('/status', [TelefoniaController::class, 'status'])->name('api.status');

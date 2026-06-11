@@ -97,8 +97,8 @@ class DashboardService
 
         // 4. Operadores con paginación — Estados AMI cargados vía AJAX (ver api.php)
         try {
-            $operadoresLocales = OperadorConfig::with('extensiones')
-                ->orderByDesc('is_active')
+            $operadoresLocales = OperadorConfig::where('is_active', true)
+                ->with('extensiones')
                 ->orderBy('nombre_operador')
                 ->paginate(5, ['*'], 'operadores_page');
 

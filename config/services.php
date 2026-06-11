@@ -43,6 +43,6 @@ return [
         'client_secret'        => env('FREEPBX_CLIENT_SECRET'),
         'token_path'           => env('FREEPBX_TOKEN_PATH', '/admin/api/api/token'),
         'graphql_path'         => env('FREEPBX_GRAPHQL_PATH', '/admin/api/api/gql'),
-        'health_check_timeout' => (int) env('FREEPBX_HEALTH_CHECK_TIMEOUT', 3),
+        'health_check_timeout' => (int) env('FREEPBX_HEALTH_CHECK_TIMEOUT', 10),
     ],
 ];

@@ -466,8 +466,8 @@
     <script type="module">
         document.addEventListener('DOMContentLoaded', () => {
             // El listener de Alpine JS se encarga ahora del evento 'nueva-alerta-global'
-            // Inicializar el motor de Polling unificado cada 5 segundos
-            setInterval(executeUnifiedPolling, 5000);
+            // Inicializar el motor de Polling unificado cada 15 segundos
+            setInterval(executeUnifiedPolling, 15000);
         });
 
         /**

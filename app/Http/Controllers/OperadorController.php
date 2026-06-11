@@ -8,6 +8,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Gate;
+use App\Models\User;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class OperadorController extends Controller
 {
@@ -16,18 +21,30 @@ class OperadorController extends Controller
      */
     public function index(): View
     {
-        // Operadores sin ninguna extensión (Disponibles) — Con eager loading
-        $operadoresDisponibles = OperadorConfig::with('extensiones')->doesntHave('extensiones')->orderBy('nombre_operador')->get();
+        // Operadores sin ninguna extensión (Disponibles) — Con eager loading y filtrando por activos
+        $operadoresDisponibles = OperadorConfig::with('extensiones')
+            ->where('is_active', true)
+            ->doesntHave('extensiones')
+            ->orderBy('nombre_operador')
+            ->get();
         
-        // Extensiones con sus operadores asignados
+        // Extensiones con sus operadores asignados (filtrando por activos)
         $extensionesConOperadores = Extension::with(['operadores' => function ($q) {
-            $q->orderBy('nombre_operador');
-        }])->has('operadores')->orderBy('numero')->get();
+            $q->where('operadores_config.is_active', true)->orderBy('nombre_operador');
+        }])->whereHas('operadores', function ($q) {
+            $q->where('operadores_config.is_active', true);
+        })->orderBy('numero')->get();
 
         // Todas las extensiones para el select/modal de asignación
         $extensionesTotales = Extension::orderBy('numero')->get();
 
-        return view('operadores.index', compact('operadoresDisponibles', 'extensionesConOperadores', 'extensionesTotales'));
+        // Operadores deshabilitados
+        $operadoresDeshabilitados = OperadorConfig::with('extensiones')
+            ->where('is_active', false)
+            ->orderBy('nombre_operador')
+            ->get();
+
+        return view('operadores.index', compact('operadoresDisponibles', 'extensionesConOperadores', 'extensionesTotales', 'operadoresDeshabilitados'));
     }
 
     /**
@@ -67,13 +84,18 @@ class OperadorController extends Controller
             });
         }
 
+        // Copiar la primera extensión asignada a la columna base para facilitar consultas directas
+        $primeraExtension = Extension::whereIn('id', $extIds)->first();
+        $extensionBase = $primeraExtension ? $primeraExtension->numero : '0000';
+
         // Actualizar datos base del operador
         $operador->update([
-            'grupo_horario' => $grupoHorario,
-            'horario_turno' => $request->input('horario_turno'),
+            'extension'      => $extensionBase,
+            'grupo_horario'  => $grupoHorario,
+            'horario_turno'  => $request->input('horario_turno'),
             'horario_comida' => $request->input('horario_comida'),
             'horario_descanso' => $request->input('horario_descanso'),
-            'is_active'     => $request->input('is_active'),
+            'is_active'      => $request->input('is_active'),
         ]);
 
         return redirect()->route('operadores.index')->with('success', 'Operador actualizado exitosamente.');
@@ -90,5 +112,87 @@ class OperadorController extends Controller
         $estado = $operador->is_active ? 'activado' : 'desactivado';
 
         return back()->with('success', "Operador '{$operador->nombre_operador}' {$estado} manualmente.");
+    }
+
+    /**
+     * Sincroniza de forma masiva los operadores desde la API de la Ficha.
+     */
+    public function sincronizarDesdeFicha(Request $request): RedirectResponse
+    {
+        Gate::authorize('manage-system');
+        
+        $config = config('ficha_api');
+        $url = rtrim($config['base_url'], '/') . '/index.php?url=fichaApi/operadores';
+        
+        try {
+            $response = Http::timeout($config['timeout'])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $config['token'],
+                    'Accept' => 'application/json'
+                ])
+                ->get($url);
+                
+            if (!$response->successful()) {
+                return back()->withErrors(['sincronizar' => 'Error al consultar la Ficha (HTTP ' . $response->status() . ')']);
+            }
+            
+            $result = $response->json();
+            if (!isset($result['success']) || !$result['success'] || !isset($result['data'])) {
+                return back()->withErrors(['sincronizar' => 'La API de la Ficha no retornó datos válidos.']);
+            }
+            
+            $operadores = $result['data'];
+            $creados = 0;
+            $actualizados = 0;
+            
+            foreach ($operadores as $op) {
+                $fichaUsername = $op['usuario'];
+                $nombre = $op['nombre_completo'];
+                $cedula = $op['cedula'] ?? null;
+                
+                // 1. Gestionar OperadorConfig
+                $operador = OperadorConfig::where('ficha_username', $fichaUsername)->first();
+                if (!$operador) {
+                    $operador = OperadorConfig::create([
+                        'ficha_username'  => $fichaUsername,
+                        'nombre_operador' => $nombre,
+                        'extension'       => '0000',
+                        'queue_name'      => 'ven911',
+                        'is_active'       => false,
+                    ]);
+                    $creados++;
+                } else {
+                    $operador->update([
+                        'nombre_operador' => $nombre
+                    ]);
+                    $actualizados++;
+                }
+                
+                // 2. Gestionar User
+                $email = $fichaUsername . '@ficha.local';
+                $user = User::where('email', $email)->first();
+                if (!$user) {
+                    User::create([
+                        'name'      => $nombre,
+                        'email'     => $email,
+                        'cedula'    => $cedula,
+                        'password'  => Hash::make(Str::random(32)),
+                        'role'      => User::ROLE_USER,
+                        'is_active' => true,
+                    ]);
+                } else {
+                    $user->update([
+                        'name' => $nombre,
+                        'cedula' => $cedula,
+                    ]);
+                }
+            }
+            
+            return back()->with('success', "Sincronización finalizada. Operadores procesados: {$creados} nuevos, {$actualizados} actualizados.");
+            
+        } catch (\Exception $e) {
+            Log::error('[PBX] Error sincronizando desde Ficha: ' . $e->getMessage());
+            return back()->withErrors(['sincronizar' => 'Error de conexión: ' . $e->getMessage()]);
+        }
     }
 }

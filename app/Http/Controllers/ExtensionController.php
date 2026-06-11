@@ -28,9 +28,10 @@ class ExtensionController extends Controller
         // Paginamos separando por prefijo y filtrando solo activas
         $extensionsOperadores = Extension::with('operadores')
             ->where('is_active', true)
-            ->whereBetween('numero', ['8001', '8006'])
+            ->whereBetween('numero', ['8001', '8099'])
+            ->whereNotIn('numero', ['8007', '8008'])
             ->orderBy('numero')
-            ->paginate(5, ['*'], 'page_op');
+            ->paginate(15, ['*'], 'page_op');
 
         $extensionsDespachadores = Extension::with('operadores')
             ->where('is_active', true)

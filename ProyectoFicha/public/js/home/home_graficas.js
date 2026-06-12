@@ -250,6 +250,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const sessBadge = document.getElementById('pbx-widget-session-badge');
         const phoneBadge = document.getElementById('pbx-widget-phone-badge');
         
+        const cardEl = document.getElementById('cardPbxStatus');
+        const iconContainerEl = document.getElementById('pbx-widget-icon-container');
+        const iconEl = document.getElementById('pbx-widget-icon');
+        const queueLabelEl = document.getElementById('pbx-widget-queue-label');
+        
         if (!extEl) return;
 
         try {
@@ -259,40 +264,91 @@ document.addEventListener('DOMContentLoaded', function() {
             const res = await response.json();
             if (res.success && res.data) {
                 const data = res.data;
-                extEl.textContent = data.extension || '0000';
-                queueEl.textContent = data.queue_name || 'N/A';
+                const hasPhone = data.extension && data.extension !== '0000' && data.extension !== '';
                 
-                // 1. Badge de Sesión (Activa / Inactiva)
-                if (data.is_active) {
-                    sessBadge.textContent = 'Sesión: Activa';
-                    sessBadge.style.backgroundColor = '#16a34a'; // bg-success
-                    sessBadge.classList.add('badge-pulse');
+                if (hasPhone) {
+                    // --- ESTADO ACTIVO / CON TELÉFONO ---
+                    extEl.innerHTML = data.extension;
+                    extEl.className = 'display-5 fw-bold text-dark mb-0';
+                    queueEl.textContent = data.queue_name || 'N/A';
+                    
+                    if (queueLabelEl) queueLabelEl.style.setProperty('display', 'block', 'important');
+                    
+                    // Restablecer estilos de tarjeta y de icono a los colores por defecto (Azul/Normal)
+                    if (cardEl) {
+                        cardEl.classList.remove('border-danger');
+                        cardEl.classList.add('border-primary');
+                    }
+                    if (iconContainerEl) {
+                        iconContainerEl.className = 'rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0';
+                    }
+                    if (iconEl) {
+                        iconEl.className = 'bi bi-telephone-fill fs-3 text-primary';
+                    }
+                    
+                    // 1. Badge de Sesión (Activa / Inactiva)
+                    if (data.is_active) {
+                        sessBadge.textContent = 'Sesión: Activa';
+                        sessBadge.style.backgroundColor = '#16a34a'; // bg-success
+                        sessBadge.classList.add('badge-pulse');
+                    } else {
+                        sessBadge.textContent = 'Sesión: Inactiva';
+                        sessBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                        sessBadge.classList.remove('badge-pulse');
+                    }
+                    
+                    // 2. Badge de Teléfono (Conectado / Desconectado)
+                    if (data.telefono_status === 'ONLINE') {
+                        phoneBadge.textContent = 'Teléfono: Conectado';
+                        phoneBadge.style.backgroundColor = '#16a34a'; // bg-success
+                    } else {
+                        phoneBadge.textContent = 'Teléfono: Desconectado';
+                        phoneBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                    }
+                    
+                    if (sessBadge) sessBadge.style.setProperty('display', 'inline-block', 'important');
+                    if (phoneBadge) phoneBadge.style.setProperty('display', 'inline-block', 'important');
                 } else {
-                    sessBadge.textContent = 'Sesión: Inactiva';
-                    sessBadge.style.backgroundColor = '#dc2626'; // bg-danger
-                    sessBadge.classList.remove('badge-pulse');
-                }
-                
-                // 2. Badge de Teléfono (Conectado / Desconectado)
-                if (data.telefono_status === 'ONLINE') {
-                    phoneBadge.textContent = 'Teléfono: Conectado';
-                    phoneBadge.style.backgroundColor = '#16a34a'; // bg-success
-                } else {
-                    phoneBadge.textContent = 'Teléfono: Desconectado';
-                    phoneBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                    // --- ESTADO INACTIVO / SIN TELÉFONO ---
+                    extEl.innerHTML = '<span class="fs-4 text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>No tiene línea telefónica</span>';
+                    if (queueLabelEl) queueLabelEl.style.setProperty('display', 'none', 'important');
+                    
+                    // Cambiar estilos de tarjeta e icono a Rojo (Danger)
+                    if (cardEl) {
+                        cardEl.classList.remove('border-primary');
+                        cardEl.classList.add('border-danger');
+                    }
+                    if (iconContainerEl) {
+                        iconContainerEl.className = 'rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0';
+                    }
+                    if (iconEl) {
+                        iconEl.className = 'bi bi-telephone-x-fill fs-3 text-danger';
+                    }
+                    
+                    if (sessBadge) sessBadge.style.setProperty('display', 'none', 'important');
+                    if (phoneBadge) phoneBadge.style.setProperty('display', 'none', 'important');
                 }
             } else {
-                throw new Error(res.message || 'Error desconocido');
+                throw new Error(res.message || 'Error de datos');
             }
         } catch (e) {
             console.error('[PBX Widget] Error al actualizar:', e);
-            extEl.textContent = '--';
-            queueEl.textContent = 'Error';
-            sessBadge.textContent = 'Sesión: Error';
-            sessBadge.style.backgroundColor = '#64748b';
-            sessBadge.classList.remove('badge-pulse');
-            phoneBadge.textContent = 'Teléfono: Inactivo';
-            phoneBadge.style.backgroundColor = '#64748b';
+            extEl.innerHTML = '<span class="fs-5 text-secondary fw-semibold">Error de Conexión</span>';
+            if (queueLabelEl) queueLabelEl.style.setProperty('display', 'none', 'important');
+            
+            if (cardEl) {
+                cardEl.classList.remove('border-primary');
+                cardEl.classList.add('border-danger');
+            }
+            if (iconContainerEl) {
+                iconContainerEl.className = 'rounded-circle bg-secondary bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0';
+            }
+            if (iconEl) {
+                iconEl.className = 'bi bi-telephone-minus-fill fs-3 text-secondary';
+            }
+            
+            if (sessBadge) sessBadge.style.setProperty('display', 'none', 'important');
+            if (phoneBadge) phoneBadge.style.setProperty('display', 'none', 'important');
         }
     }
 });

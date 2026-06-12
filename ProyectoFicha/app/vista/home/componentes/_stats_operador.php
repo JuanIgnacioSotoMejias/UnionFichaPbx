@@ -31,8 +31,8 @@
         <div class="card shadow-sm border-0 rounded-4 bg-white border-start border-primary border-5 h-100" id="cardPbxStatus">
             <div class="card-body p-4 d-flex flex-column justify-content-between text-center text-lg-start">
                 <div class="d-flex align-items-center justify-content-center justify-content-lg-start mb-3">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary d-inline-flex">
-                        <i class="bi bi-telephone-fill fs-2"></i>
+                    <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 50px; height: 50px;" id="pbx-widget-icon-container">
+                        <i class="bi bi-telephone-fill fs-3 text-primary" id="pbx-widget-icon"></i>
                     </div>
                     <div class="text-start">
                         <h5 class="fw-bold text-dark mb-0">Teléfono Asignado</h5>
@@ -40,18 +40,20 @@
                     </div>
                 </div>
                 
-                <div class="my-2 text-center">
-                    <span class="display-5 fw-bold text-dark mb-0" id="pbx-widget-extension">--</span>
-                    <div class="text-secondary small fw-semibold mt-1" id="pbx-widget-queue-label">
+                <div class="my-2 text-center" style="min-height: 65px; display: flex; flex-direction: column; justify-content: center;">
+                    <div id="pbx-widget-extension-container">
+                        <span class="display-5 fw-bold text-dark mb-0" id="pbx-widget-extension">--</span>
+                    </div>
+                    <div class="text-secondary small fw-semibold mt-1" id="pbx-widget-queue-label" style="display: none;">
                         Cola: <span id="pbx-widget-queue" class="text-primary">--</span>
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 justify-content-center mt-3">
-                    <span class="badge rounded-pill px-3 py-2 text-white" id="pbx-widget-session-badge" style="background-color: #64748b; font-size: 0.75rem;">
+                <div class="d-flex gap-2 justify-content-center mt-3" id="pbx-widget-badges-container">
+                    <span class="badge rounded-pill px-3 py-2 text-white" id="pbx-widget-session-badge" style="background-color: #64748b; font-size: 0.75rem; display: none;">
                         Sesión: Cargando...
                     </span>
-                    <span class="badge rounded-pill px-3 py-2 text-white" id="pbx-widget-phone-badge" style="background-color: #64748b; font-size: 0.75rem;">
+                    <span class="badge rounded-pill px-3 py-2 text-white" id="pbx-widget-phone-badge" style="background-color: #64748b; font-size: 0.75rem; display: none;">
                         Teléfono: Cargando...
                     </span>
                 </div>

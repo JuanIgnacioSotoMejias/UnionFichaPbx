@@ -7,6 +7,7 @@
                 <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Gestión de Personal</h2>
                 <p class="text-xs text-slate-400 mt-1">Administra los operadores y su asignación a extensiones (Max 12 por Extensión).</p>
             </div>
+            @can('manage-system')
             <div>
                 <form action="{{ route('operadores.sincronizarFicha') }}" method="POST" onsubmit="this.querySelector('button').disabled=true; this.querySelector('.spinner').classList.remove('hidden');">
                     @csrf
@@ -20,6 +21,7 @@
                     </button>
                 </form>
             </div>
+            @endcan
         </div>
 
         {{-- Mensajes Flash y Errores --}}

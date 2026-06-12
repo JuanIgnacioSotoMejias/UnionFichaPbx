@@ -468,6 +468,26 @@
             // El listener de Alpine JS se encarga ahora del evento 'nueva-alerta-global'
             // Inicializar el motor de Polling unificado cada 15 segundos
             setInterval(executeUnifiedPolling, 15000);
+
+            // Escuchar el evento de sesión vía WebSocket para reactividad instantánea (Paso 3)
+            if (window.Echo) {
+                window.Echo.channel('dashboard')
+                    .listen('.operador.sesion', (e) => {
+                        console.log(`Evento WebSocket recibido: ${e.evento} de ${e.operador}`);
+                        
+                        // Añadir alerta visual opcional de que hubo actividad
+                        window.dispatchEvent(new CustomEvent('nueva-alerta-global', {
+                            detail: {
+                                nivel: 'INFO',
+                                tipo_alerta: 'ACTIVIDAD DE OPERADOR',
+                                descripcion: `El operador ${e.operador} registró un ${e.evento}.`
+                            }
+                        }));
+
+                        // Forzar una actualización unificada inmediata de la UI
+                        executeUnifiedPolling();
+                    });
+            }
         });
 
         /**

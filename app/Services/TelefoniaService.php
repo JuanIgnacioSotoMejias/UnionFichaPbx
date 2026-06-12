@@ -36,11 +36,14 @@ class TelefoniaService
             ]);
             Log::info("[TelefoniaService] Auto-registro de operador: {$fichaUsername}");
         } else {
+            // Solo actualizar campos que vienen con valor real en el payload.
+            // En LOGOUT, Ficha solo envía {usuario, evento}, así que cola/extension/nombre serán null.
+            // array_filter con callback estricto evita sobreescribir con null o cadena vacía.
             $updateData = array_filter([
                 'queue_name'      => $colaPayload,
                 'nombre_operador' => $nombrePayload,
                 'extension'       => $extensionPayload,
-            ]);
+            ], fn($value) => $value !== null && $value !== '');
             
             if (!empty($updateData)) {
                 $operador->update($updateData);
@@ -129,6 +132,9 @@ class TelefoniaService
 
         Log::info("[TelefoniaService] LOGIN exitoso: {$operador->ficha_username}");
 
+        // Disparar evento para actualizar el Dashboard en tiempo real (Paso 3)
+        event(new \App\Events\OperadorSesionEvent('LOGIN', $operador));
+
         return array_merge([
             'success' => true,
             'status'  => 'Conectado',
@@ -148,11 +154,25 @@ class TelefoniaService
             'message' => 'El operador no tenía una extensión activa.'
         ];
 
-        $extensionUsar = $operador->extension;
+        // 1. Buscar la sesión activa primero
+        $session = OperadorSession::where('operador_config_id', $operador->id)
+            ->whereNull('fecha_fin')
+            ->latest()
+            ->first();
 
-        if ($extensionUsar !== '0000' && !empty($extensionUsar)) {
+        // 2. Determinar la extensión usada (priorizamos la de la sesión activa si la del operador es 0000/empty)
+        $extensionUsar = $operador->extension;
+        if ((empty($extensionUsar) || $extensionUsar === '0000') && $session) {
+            $extensionUsar = $session->extension;
+        }
+
+        // 3. Castear y validar datos para AMI
+        $extensionUsar = trim((string) $extensionUsar);
+        $queueName = trim((string) $operador->queue_name);
+
+        if ($extensionUsar !== '0000' && $extensionUsar !== '') {
             try {
-                $amiResponse = $this->ami->removeFromQueue($extensionUsar, $operador->queue_name);
+                $amiResponse = $this->ami->removeFromQueue($extensionUsar, $queueName);
                 $resultado = array_merge($resultado, $amiResponse ?? []);
             } catch (\Exception $e) {
                 // Capturar excepción de Asterisk silenciosamente para no detener el flujo de logout local
@@ -165,11 +185,6 @@ class TelefoniaService
         }
 
         $operador->update(['is_active' => false]);
-
-        $session = OperadorSession::where('operador_config_id', $operador->id)
-            ->whereNull('fecha_fin')
-            ->latest()
-            ->first();
 
         if ($session) {
             $session->update([
@@ -186,6 +201,9 @@ class TelefoniaService
         ]);
 
         Log::info("[TelefoniaService] LOGOUT procesado: {$operador->ficha_username}");
+
+        // Disparar evento para actualizar el Dashboard en tiempo real (Paso 3)
+        event(new \App\Events\OperadorSesionEvent('LOGOUT', $operador));
 
         return $resultado;
     }

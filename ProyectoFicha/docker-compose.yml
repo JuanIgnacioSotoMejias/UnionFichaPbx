@@ -27,6 +27,7 @@ services:
       - RABBITMQ_USER=ven911
       - RABBITMQ_PASS=ven911_mq_pass
       - RABBITMQ_QUEUE=notificaciones
+      - PBX_COLA_DEFAULT=0911
     depends_on:
       ven911_db:
         condition: service_started

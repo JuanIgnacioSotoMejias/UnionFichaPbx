@@ -11,8 +11,9 @@ cd ~/UnionFichaPbx
 git pull
 
 echo "=== 2. Copiando el código actualizado a la ruta de Apache ==="
-# Copiamos todo el contenido actualizado
+# Copiamos todo el contenido actualizado de ambos sistemas
 sudo cp -r ~/UnionFichaPbx/pbx-receptor/* /opt/lampp/htdocs/pbx-receptor/
+sudo cp -r ~/UnionFichaPbx/ProyectoFicha/* /opt/lampp/htdocs/ProyectoFicha/
 
 echo "=== 2.5. Eliminando archivos obsoletos de compilación en caliente ==="
 # Eliminamos de forma explícita el archivo 'hot' (que le dice a Laravel que use el

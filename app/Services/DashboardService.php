@@ -78,13 +78,18 @@ class DashboardService
             Log::error('[Dashboard] Error al cargar métricas: ' . $e->getMessage());
         }
 
-        // 3. Últimas actividades de la base de datos local
+        // 3. Últimas actividades de la base de datos local (solo de operadores en turno actual Y solo de hoy)
         try {
-            $ultimosEventos = HistorialAcceso::with('operador')
+            $ultimosEventos = HistorialAcceso::whereDate('created_at', today())
+                ->whereHas('operador', function($query) {
+                    $query->where('is_active', true);
+                })
+                ->with('operador')
                 ->latest('created_at')
                 ->paginate(7, ['*'], 'eventos_page');
 
             $ultimosErroresAmi = BitacoraAmi::where('status', 'ERROR')
+                ->whereDate('created_at', today())
                 ->latest()
                 ->take(5)
                 ->get();
@@ -97,7 +102,11 @@ class DashboardService
 
         // 4. Operadores con paginación — Estados AMI cargados vía AJAX (ver api.php)
         try {
+            // Solo mostramos operadores que estén activos Y tengan una sesión iniciada hoy
             $operadoresLocales = OperadorConfig::where('is_active', true)
+                ->whereHas('historial', function($query) {
+                    $query->whereDate('created_at', today())->where('evento', 'LOGIN');
+                })
                 ->with('extensiones')
                 ->orderBy('nombre_operador')
                 ->paginate(5, ['*'], 'operadores_page');

@@ -77,6 +77,18 @@ class AmiService
      */
     public function addToQueue(string $extension, string $queue, string $memberName = ''): array
     {
+        $extension = trim((string) $extension);
+        $queue = trim((string) $queue);
+        $memberName = trim((string) $memberName);
+
+        if (empty($extension) || empty($queue)) {
+            return [
+                'success' => false,
+                'status'  => 'ERROR',
+                'message' => 'Extensión o cola no pueden estar vacíos para QueueAdd.'
+            ];
+        }
+
         $interface = "PJSIP/{$extension}";
 
         $action = new QueueAddAction($queue, $interface);
@@ -97,6 +109,17 @@ class AmiService
      */
     public function removeFromQueue(string $extension, string $queue): array
     {
+        $extension = trim((string) $extension);
+        $queue = trim((string) $queue);
+
+        if (empty($extension) || empty($queue)) {
+            return [
+                'success' => false,
+                'status'  => 'ERROR',
+                'message' => 'Extensión o cola no pueden estar vacíos para QueueRemove.'
+            ];
+        }
+
         $interface = "PJSIP/{$extension}";
 
         return $this->executeQueueAction('QueueRemove', $extension, $queue, new QueueRemoveAction($queue, $interface));

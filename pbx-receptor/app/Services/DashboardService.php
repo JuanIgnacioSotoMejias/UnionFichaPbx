@@ -97,13 +97,13 @@ class DashboardService
 
         // 4. Operadores con paginación — Estados AMI cargados vía AJAX (ver api.php)
         try {
-            $operadoresLocales = OperadorConfig::where('is_active', true)
-                ->with('extensiones')
+            $operadoresLocales = OperadorConfig::with('extensiones')
                 ->orderBy('nombre_operador')
                 ->paginate(5, ['*'], 'operadores_page');
 
             // Cacheamos estados AMI por 10 segundos para evitar sockets bloqueantes en carga de página
-            $extensionesIds = $operadoresLocales->pluck('extension')->filter()->toArray();
+            // Solo consultamos el estado para los operadores que están activos (iniciaron sesión)
+            $extensionesIds = $operadoresLocales->where('is_active', true)->pluck('extension')->filter()->toArray();
 
             $estadosRealesAmi = [];
             if ($amiConectado && !empty($extensionesIds)) {
@@ -115,6 +115,11 @@ class DashboardService
 
             // Usamos ->through() en lugar de ->map() para mantener la paginación intacta
             $operadoresLocales->through(function ($operador) use ($extensionesPami, $estadosRealesAmi) {
+                if (!$operador->is_active) {
+                    $operador->estatus_pbx = 'offline';
+                    return $operador;
+                }
+
                 $existeEnCentral = collect($extensionesPami)->firstWhere('extension', $operador->extension);
 
                 if ($existeEnCentral) {

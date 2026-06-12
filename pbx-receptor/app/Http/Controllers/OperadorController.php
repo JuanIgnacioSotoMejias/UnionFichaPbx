@@ -167,25 +167,6 @@ class OperadorController extends Controller
                     ]);
                     $actualizados++;
                 }
-                
-                // 2. Gestionar User
-                $email = $fichaUsername . '@ficha.local';
-                $user = User::where('email', $email)->first();
-                if (!$user) {
-                    User::create([
-                        'name'      => $nombre,
-                        'email'     => $email,
-                        'cedula'    => $cedula,
-                        'password'  => Hash::make(Str::random(32)),
-                        'role'      => User::ROLE_USER,
-                        'is_active' => true,
-                    ]);
-                } else {
-                    $user->update([
-                        'name' => $nombre,
-                        'cedula' => $cedula,
-                    ]);
-                }
             }
             
             return back()->with('success', "Sincronización finalizada. Operadores procesados: {$creados} nuevos, {$actualizados} actualizados.");

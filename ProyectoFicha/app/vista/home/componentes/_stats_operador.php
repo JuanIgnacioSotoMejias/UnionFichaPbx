@@ -28,12 +28,10 @@
 
     <!-- Monitoreo de Teléfono PBX (Receptor) -->
     <div class="col-lg-4 col-md-12 col-12">
-        <div class="card shadow-sm border-0 rounded-4 bg-white border-start border-primary border-5 h-100" id="cardPbxStatus">
+        <div class="card shadow-sm border-0 rounded-4 bg-white border-start border-success border-5 h-100" id="cardPbxStatus">
             <div class="card-body p-4 d-flex flex-column justify-content-between text-center text-lg-start">
                 <div class="d-flex align-items-center justify-content-center justify-content-lg-start mb-3">
-                    <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 50px; height: 50px;" id="pbx-widget-icon-container">
-                        <i class="bi bi-telephone-fill fs-3 text-primary" id="pbx-widget-icon"></i>
-                    </div>
+                    <i class="bi bi-telephone-fill fs-2 me-3 text-success" id="pbx-widget-icon" style="transition: color 0.3s ease;"></i>
                     <div class="text-start">
                         <h5 class="fw-bold text-dark mb-0">Teléfono Asignado</h5>
                         <p class="text-muted small mb-0">Monitoreo PBX Receptor</p>
@@ -45,7 +43,7 @@
                         <span class="display-5 fw-bold text-dark mb-0" id="pbx-widget-extension">--</span>
                     </div>
                     <div class="text-secondary small fw-semibold mt-1" id="pbx-widget-queue-label" style="display: none;">
-                        Cola: <span id="pbx-widget-queue" class="text-primary">--</span>
+                        Cola: <span id="pbx-widget-queue" class="text-success fw-bold">--</span>
                     </div>
                 </div>
 

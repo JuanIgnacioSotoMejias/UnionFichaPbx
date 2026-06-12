@@ -251,7 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const phoneBadge = document.getElementById('pbx-widget-phone-badge');
         
         const cardEl = document.getElementById('cardPbxStatus');
-        const iconContainerEl = document.getElementById('pbx-widget-icon-container');
         const iconEl = document.getElementById('pbx-widget-icon');
         const queueLabelEl = document.getElementById('pbx-widget-queue-label');
         
@@ -274,16 +273,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (queueLabelEl) queueLabelEl.style.setProperty('display', 'block', 'important');
                     
-                    // Restablecer estilos de tarjeta y de icono a los colores por defecto (Azul/Normal)
+                    // Restablecer estilos de tarjeta y de icono a los colores por defecto (Verde/Success)
                     if (cardEl) {
                         cardEl.classList.remove('border-danger');
-                        cardEl.classList.add('border-primary');
-                    }
-                    if (iconContainerEl) {
-                        iconContainerEl.className = 'rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0';
+                        cardEl.classList.add('border-success');
                     }
                     if (iconEl) {
-                        iconEl.className = 'bi bi-telephone-fill fs-3 text-primary';
+                        iconEl.className = 'bi bi-telephone-fill fs-2 me-3 text-success';
                     }
                     
                     // 1. Badge de Sesión (Activa / Inactiva)
@@ -315,14 +311,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Cambiar estilos de tarjeta e icono a Rojo (Danger)
                     if (cardEl) {
-                        cardEl.classList.remove('border-primary');
+                        cardEl.classList.remove('border-success');
                         cardEl.classList.add('border-danger');
                     }
-                    if (iconContainerEl) {
-                        iconContainerEl.className = 'rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0';
-                    }
                     if (iconEl) {
-                        iconEl.className = 'bi bi-telephone-x-fill fs-3 text-danger';
+                        iconEl.className = 'bi bi-telephone-x-fill fs-2 me-3 text-danger';
                     }
                     
                     if (sessBadge) sessBadge.style.setProperty('display', 'none', 'important');
@@ -337,14 +330,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (queueLabelEl) queueLabelEl.style.setProperty('display', 'none', 'important');
             
             if (cardEl) {
-                cardEl.classList.remove('border-primary');
+                cardEl.classList.remove('border-success');
                 cardEl.classList.add('border-danger');
             }
-            if (iconContainerEl) {
-                iconContainerEl.className = 'rounded-circle bg-secondary bg-opacity-10 d-inline-flex align-items-center justify-content-center flex-shrink-0';
-            }
             if (iconEl) {
-                iconEl.className = 'bi bi-telephone-minus-fill fs-3 text-secondary';
+                iconEl.className = 'bi bi-telephone-minus-fill fs-2 me-3 text-secondary';
             }
             
             if (sessBadge) sessBadge.style.setProperty('display', 'none', 'important');

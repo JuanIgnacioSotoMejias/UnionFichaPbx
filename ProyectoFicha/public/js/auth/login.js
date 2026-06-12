@@ -66,16 +66,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 3.4 Evaluación de respuesta exitosa
             if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Acceso Autorizado',
-                    text: data.message || 'Bienvenido al sistema VEN 911.',
-                    showConfirmButton: false,
-                    timer: 1500
-                }).then(() => {
-                    // Redirección al Dashboard Principal tras sesión válida
-                    window.location.href = 'index.php?url=home';
-                });
+                if (data.pbx_error) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Acceso con Advertencia',
+                        html: `Sesión iniciada con éxito en Ficha, pero <strong>no se pudo conectar la telefonía (PBX)</strong>.<br><br><span class="text-danger small">Detalle: ${data.pbx_error}</span>`,
+                        confirmButtonText: 'Entrar de todas formas <i class="bi bi-arrow-right-short"></i>',
+                        buttonsStyling: false,
+                        customClass: {
+                            confirmButton: 'btn btn-warning px-4 py-2 text-dark fw-bold'
+                        }
+                    }).then(() => {
+                        window.location.href = 'index.php?url=home';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Acceso Autorizado',
+                        text: data.message || 'Bienvenido al sistema VEN 911.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        // Redirección al Dashboard Principal tras sesión válida
+                        window.location.href = 'index.php?url=home';
+                    });
+                }
             } else {
                 // Falla lógica (credenciales incorrectas)
                 throw new Error(data.message || 'Credenciales inválidas. Intente nuevamente.');

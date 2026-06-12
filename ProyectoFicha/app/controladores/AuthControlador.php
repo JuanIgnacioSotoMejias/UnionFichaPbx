@@ -115,6 +115,11 @@ class AuthControlador {
                     // 3.5 Carga persistente de permisos para validación RBAC
                     $_SESSION['permisos'] = $this->modelo->obtenerPermisosDeRol((int)$usuario_datos['rol_id']);
 
+                    $responsePayload = [
+                        'success' => true,
+                        'message' => 'Autenticación exitosa.'
+                    ];
+
                     // === INTEGRACIÓN PBX: Activar extensión telefónica ===
                     if ((int)$usuario_datos['rol_id'] === 2) {
                         try {
@@ -127,18 +132,22 @@ class AuthControlador {
                             );
                             $_SESSION['pbx_activo'] = $pbxResult['success'] ?? false;
                             if (!$pbxResult['success']) {
-                                error_log("[PBX] Login fallido para {$usuario_datos['usuario']}: " . ($pbxResult['error'] ?? 'desconocido'));
+                                $errorMsg = $pbxResult['error'] ?? 'desconocido';
+                                error_log("[PBX] Login fallido para {$usuario_datos['usuario']}: " . $errorMsg);
+                                $responsePayload['pbx_error'] = $errorMsg;
                             }
                         } catch (\Throwable $e) {
-                            error_log("[PBX] Excepción en login: " . $e->getMessage());
+                            $excMsg = $e->getMessage();
+                            error_log("[PBX] Excepción en login: " . $excMsg);
                             $_SESSION['pbx_activo'] = false;
+                            $responsePayload['pbx_error'] = $excMsg;
                         }
                     }
 
                     // Auditoría de ingreso
                     $this->modeloEvento->registrarEvento((int)$usuario_datos['id'], 'LOGIN', 'usuarios', (int)$usuario_datos['id'], null, null, "Usuario '{$usuario}' inició sesión.");
 
-                    echo json_encode(['success' => true, 'message' => 'Autenticación exitosa.']);
+                    echo json_encode($responsePayload);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Credenciales inválidas.']);
                 }

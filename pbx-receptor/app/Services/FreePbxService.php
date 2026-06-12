@@ -109,12 +109,12 @@ class FreePbxService
         $timeout = (int) config('services.freepbx.health_check_timeout', 3);
         
         try {
-            // Consulta validada que sí responde HTTP 200 en tu central
+            // Consulta validada de introspección básica para evitar consultas pesadas a la BD
             $response = Http::withoutVerifying()
                 ->withToken($this->getValidToken())
                 ->timeout($timeout)
                 ->post($this->graphqlUrl, [
-                    'query' => '{ fetchAllExtensions { extension { extensionId } } }'
+                    'query' => '{ __typename }'
                 ]);
 
             if ($response->successful()) {

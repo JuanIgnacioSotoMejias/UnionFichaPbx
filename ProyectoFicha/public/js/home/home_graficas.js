@@ -173,6 +173,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             chartInstances.semana.render();
         }
+
+        // Inicializar monitoreo del widget PBX en tiempo real
+        if (document.getElementById('pbx-widget-extension')) {
+            actualizarWidgetPbx();
+            setInterval(actualizarWidgetPbx, 30000);
+        }
     }
 
     function renderDespachadorStats(s) {
@@ -232,6 +238,107 @@ document.addEventListener('DOMContentLoaded', function() {
                 colors: [colors.success, colors.warning]
             });
             chartInstances.municipiosEficiencia.render();
+        }
+    }
+
+    /**
+     * Realiza una consulta asíncrona al proxy local para obtener el estado de la sesión y extensión PBX
+     */
+    async function actualizarWidgetPbx() {
+        const extEl = document.getElementById('pbx-widget-extension');
+        const queueEl = document.getElementById('pbx-widget-queue');
+        const sessBadge = document.getElementById('pbx-widget-session-badge');
+        const phoneBadge = document.getElementById('pbx-widget-phone-badge');
+        
+        const cardEl = document.getElementById('cardPbxStatus');
+        const iconEl = document.getElementById('pbx-widget-icon');
+        const queueLabelEl = document.getElementById('pbx-widget-queue-label');
+        
+        if (!extEl) return;
+
+        try {
+            const response = await fetch('index.php?url=auth/estadoPbx', { method: 'POST' });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            
+            const res = await response.json();
+            if (res.success && res.data) {
+                const data = res.data;
+                const hasPhone = data.extension && data.extension !== '0000' && data.extension !== '';
+                
+                if (hasPhone) {
+                    // --- ESTADO ACTIVO / CON TELÉFONO ---
+                    extEl.innerHTML = data.extension;
+                    extEl.className = 'display-5 fw-bold text-dark mb-0';
+                    queueEl.textContent = data.queue_name || 'N/A';
+                    
+                    if (queueLabelEl) queueLabelEl.style.setProperty('display', 'block', 'important');
+                    
+                    // Restablecer estilos de tarjeta y de icono a los colores por defecto (Verde/Success)
+                    if (cardEl) {
+                        cardEl.classList.remove('border-danger');
+                        cardEl.classList.add('border-success');
+                    }
+                    if (iconEl) {
+                        iconEl.className = 'bi bi-telephone-fill fs-2 me-3 text-success';
+                    }
+                    
+                    // 1. Badge de Sesión (Activa / Inactiva)
+                    if (data.is_active) {
+                        sessBadge.textContent = 'Sesión: Activa';
+                        sessBadge.style.backgroundColor = '#16a34a'; // bg-success
+                        sessBadge.classList.add('badge-pulse');
+                    } else {
+                        sessBadge.textContent = 'Sesión: Inactiva';
+                        sessBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                        sessBadge.classList.remove('badge-pulse');
+                    }
+                    
+                    // 2. Badge de Teléfono (Conectado / Desconectado)
+                    if (data.telefono_status === 'ONLINE') {
+                        phoneBadge.textContent = 'Teléfono: Conectado';
+                        phoneBadge.style.backgroundColor = '#16a34a'; // bg-success
+                    } else {
+                        phoneBadge.textContent = 'Teléfono: Desconectado';
+                        phoneBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                    }
+                    
+                    if (sessBadge) sessBadge.style.setProperty('display', 'inline-block', 'important');
+                    if (phoneBadge) phoneBadge.style.setProperty('display', 'inline-block', 'important');
+                } else {
+                    // --- ESTADO INACTIVO / SIN TELÉFONO ---
+                    extEl.innerHTML = '<span class="fs-4 text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>No tiene línea telefónica</span>';
+                    if (queueLabelEl) queueLabelEl.style.setProperty('display', 'none', 'important');
+                    
+                    // Cambiar estilos de tarjeta e icono a Rojo (Danger)
+                    if (cardEl) {
+                        cardEl.classList.remove('border-success');
+                        cardEl.classList.add('border-danger');
+                    }
+                    if (iconEl) {
+                        iconEl.className = 'bi bi-telephone-x-fill fs-2 me-3 text-danger';
+                    }
+                    
+                    if (sessBadge) sessBadge.style.setProperty('display', 'none', 'important');
+                    if (phoneBadge) phoneBadge.style.setProperty('display', 'none', 'important');
+                }
+            } else {
+                throw new Error(res.message || 'Error de datos');
+            }
+        } catch (e) {
+            console.error('[PBX Widget] Error al actualizar:', e);
+            extEl.innerHTML = '<span class="fs-5 text-secondary fw-semibold">Error de Conexión</span>';
+            if (queueLabelEl) queueLabelEl.style.setProperty('display', 'none', 'important');
+            
+            if (cardEl) {
+                cardEl.classList.remove('border-success');
+                cardEl.classList.add('border-danger');
+            }
+            if (iconEl) {
+                iconEl.className = 'bi bi-telephone-minus-fill fs-2 me-3 text-secondary';
+            }
+            
+            if (sessBadge) sessBadge.style.setProperty('display', 'none', 'important');
+            if (phoneBadge) phoneBadge.style.setProperty('display', 'none', 'important');
         }
     }
 });

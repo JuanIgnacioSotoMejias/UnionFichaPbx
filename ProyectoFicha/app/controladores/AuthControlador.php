@@ -225,6 +225,40 @@ class AuthControlador {
         }
     }
 
+    /**
+     * Proxy para obtener el estado del operador y su extensión desde el PBX Receptor.
+     */
+    public function estadoPbx() {
+        header('Content-Type: application/json');
+        
+        // Verificar sesión activa de operador
+        if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_username']) || (int)$_SESSION['user_rol_id'] !== 2) {
+            echo json_encode(['success' => false, 'message' => 'Sesión no válida o no corresponde a operador.']);
+            return;
+        }
+
+        try {
+            require_once 'app/Servicios/PbxApiService.php';
+            $pbxService = new \App\Servicios\PbxApiService();
+            $result = $pbxService->obtenerEstadoOperador($_SESSION['user_username']);
+            
+            if (isset($result['success']) && $result['success'] && isset($result['data']['data'])) {
+                echo json_encode([
+                    'success' => true,
+                    'data'    => $result['data']['data']
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => $result['error'] ?? 'Error desconocido al conectar con PBX.'
+                ]);
+            }
+        } catch (\Throwable $e) {
+            error_log("[PBX] Excepción en proxy estadoPbx: " . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     // ///////////////////////////////////////////////////////////////////
     // 5. RECUPERACIÓN DE CONTRASEÑA POR PREGUNTAS DE SEGURIDAD
     // ///////////////////////////////////////////////////////////////////

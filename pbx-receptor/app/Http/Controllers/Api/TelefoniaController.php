@@ -270,6 +270,49 @@ class TelefoniaController extends Controller
         return response()->json(['ok' => true, 'mensaje' => "Extensión actualizada a {$nuevaExtension}"]);
     }
 
+    /**
+     * Devuelve el estado en tiempo real de un operador y su extensión asignada.
+     */
+    public function estadoOperador(Request $request): JsonResponse
+    {
+        $request->validate(['ficha_username' => 'required|string']);
+        $username = $request->input('ficha_username');
+
+        $operador = OperadorConfig::where('ficha_username', $username)->first();
+
+        if (!$operador) {
+            return response()->json([
+                'ok'    => false,
+                'error' => 'Operador no encontrado'
+            ], 404);
+        }
+
+        $extension = $operador->extension;
+        $telefonoStatus = 'OFFLINE';
+
+        if ($extension && $extension !== '0000') {
+            try {
+                $statuses = $this->ami->getExtensionsStatuses([$extension]);
+                $telefonoStatus = $statuses[$extension] ?? 'OFFLINE';
+            } catch (\Throwable $e) {
+                Log::warning("[TelefoniaController] Error al consultar estado de extensión {$extension}: " . $e->getMessage());
+                $telefonoStatus = 'OFFLINE';
+            }
+        }
+
+        return response()->json([
+            'ok'   => true,
+            'data' => [
+                'ficha_username'  => $operador->ficha_username,
+                'nombre_operador' => $operador->nombre_operador,
+                'extension'       => $operador->extension,
+                'queue_name'      => $operador->queue_name,
+                'is_active'       => (bool) $operador->is_active,
+                'telefono_status' => $telefonoStatus,
+            ],
+        ], 200);
+    }
+
     public function statusCola($queue): JsonResponse
     {
         $status = $this->ami->getQueueStatus($queue);

@@ -107,8 +107,8 @@ if (!$autenticado && !in_array($nombreBase, ['Auth', 'Registro', 'FichaApi'])) {
     exit;
 }
 
-// Redirección si un usuario logueado intenta volver al login (excepto logout/auth)
-if ($autenticado && $nombreBase === 'Auth' && !in_array($metodo, ['logout', 'authenticate'])) {
+// Redirección si un usuario logueado intenta volver al login (excepto logout/authenticate y endpoints del PBX)
+if ($autenticado && $nombreBase === 'Auth' && !in_array($metodo, ['logout', 'authenticate', 'heartbeatPbx', 'estadoPbx'])) {
     header('Location: index.php?url=home');
     exit;
 }

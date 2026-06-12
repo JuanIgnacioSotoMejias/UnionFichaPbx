@@ -35,15 +35,6 @@ Route::get('/ping', fn () => response()->json(['ok' => true, 'service' => 'pbx-r
 | y actualizar el indicador de estado en tiempo real sin recargar la página.
 |
 */
-Route::middleware('auth:sanctum')->get('/pbx/status', function (\App\Services\FreePbxService $pbxService) {
-    $connected = $pbxService->checkRealtimeConnection();
-
-    return response()->json([
-        'ok'         => true,
-        'connected'  => $connected,
-        'checked_at' => now()->toIso8601String(),
-    ]);
-})->name('api.pbx.status');
 
 // Rutas protegidas con seguridad completa
 Route::middleware([

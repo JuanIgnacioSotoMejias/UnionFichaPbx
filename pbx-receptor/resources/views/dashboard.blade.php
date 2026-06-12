@@ -476,10 +476,10 @@
          */
         function executeUnifiedPolling() {
             // 1. Sincronizar el Estado de la API de FreePBX (Mantiene tu lógica nativa)
-            fetch('/api/pbx/status', {
+            fetch('/pbx/status', {
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(res => res.json())

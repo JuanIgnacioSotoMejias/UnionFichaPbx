@@ -29,6 +29,16 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('/pbx/status', function (\App\Services\FreePbxService $pbxService) {
+        $connected = $pbxService->checkRealtimeConnection();
+
+        return response()->json([
+            'ok'         => true,
+            'connected'  => $connected,
+            'checked_at' => now()->toIso8601String(),
+        ]);
+    })->name('api.pbx.status');
+
     // Extensions CRUD and actions
     Route::post('extensions/sincronizar', [ExtensionController::class, 'sincronizar'])->name('extensions.sincronizar');
     Route::resource('extensions', ExtensionController::class);

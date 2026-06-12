@@ -66,6 +66,9 @@ Route::middleware([
     // Lista de operadores registrados
     Route::get('/operadores', [TelefoniaController::class, 'listarOperadores'])->name('api.operadores');
 
+    // Estado específico de un operador y su extensión en el PBX
+    Route::post('/operadores/estado', [TelefoniaController::class, 'estadoOperador'])->name('api.operadores.estado');
+
     // Evento principal: LOGIN / LOGOUT desde el sistema Ficha
     Route::post('/sesion', [TelefoniaController::class, 'sesion'])->name('api.sesion');
 

@@ -589,3 +589,21 @@ i.bi, i.fas, i.far, i.fab, i.fa {
     backdrop-filter: blur(10px) !important;
     background: rgba(255, 255, 255, 0.98) !important;
 }
+
+/* Animación para el indicador activo de PBX */
+.badge-pulse {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+    animation: badge-pulse-animation 2s infinite;
+}
+
+@keyframes badge-pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+    }
+}

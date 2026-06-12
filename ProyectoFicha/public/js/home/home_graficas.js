@@ -173,6 +173,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             chartInstances.semana.render();
         }
+
+        // Inicializar monitoreo del widget PBX en tiempo real
+        if (document.getElementById('pbx-widget-extension')) {
+            actualizarWidgetPbx();
+            setInterval(actualizarWidgetPbx, 30000);
+        }
     }
 
     function renderDespachadorStats(s) {
@@ -232,6 +238,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 colors: [colors.success, colors.warning]
             });
             chartInstances.municipiosEficiencia.render();
+        }
+    }
+
+    /**
+     * Realiza una consulta asíncrona al proxy local para obtener el estado de la sesión y extensión PBX
+     */
+    async function actualizarWidgetPbx() {
+        const extEl = document.getElementById('pbx-widget-extension');
+        const queueEl = document.getElementById('pbx-widget-queue');
+        const sessBadge = document.getElementById('pbx-widget-session-badge');
+        const phoneBadge = document.getElementById('pbx-widget-phone-badge');
+        
+        if (!extEl) return;
+
+        try {
+            const response = await fetch('index.php?url=auth/estadoPbx', { method: 'POST' });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            
+            const res = await response.json();
+            if (res.success && res.data) {
+                const data = res.data;
+                extEl.textContent = data.extension || '0000';
+                queueEl.textContent = data.queue_name || 'N/A';
+                
+                // 1. Badge de Sesión (Activa / Inactiva)
+                if (data.is_active) {
+                    sessBadge.textContent = 'Sesión: Activa';
+                    sessBadge.style.backgroundColor = '#16a34a'; // bg-success
+                    sessBadge.classList.add('badge-pulse');
+                } else {
+                    sessBadge.textContent = 'Sesión: Inactiva';
+                    sessBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                    sessBadge.classList.remove('badge-pulse');
+                }
+                
+                // 2. Badge de Teléfono (Conectado / Desconectado)
+                if (data.telefono_status === 'ONLINE') {
+                    phoneBadge.textContent = 'Teléfono: Conectado';
+                    phoneBadge.style.backgroundColor = '#16a34a'; // bg-success
+                } else {
+                    phoneBadge.textContent = 'Teléfono: Desconectado';
+                    phoneBadge.style.backgroundColor = '#dc2626'; // bg-danger
+                }
+            } else {
+                throw new Error(res.message || 'Error desconocido');
+            }
+        } catch (e) {
+            console.error('[PBX Widget] Error al actualizar:', e);
+            extEl.textContent = '--';
+            queueEl.textContent = 'Error';
+            sessBadge.textContent = 'Sesión: Error';
+            sessBadge.style.backgroundColor = '#64748b';
+            sessBadge.classList.remove('badge-pulse');
+            phoneBadge.textContent = 'Teléfono: Inactivo';
+            phoneBadge.style.backgroundColor = '#64748b';
         }
     }
 });

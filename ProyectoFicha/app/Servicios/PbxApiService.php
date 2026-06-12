@@ -115,6 +115,18 @@ class PbxApiService {
     }
 
     /**
+     * Obtiene el estado del operador y de su teléfono desde el PBX.
+     *
+     * @param string $usuario Nombre de usuario en el sistema Ficha.
+     * @return array
+     */
+    public function obtenerEstadoOperador(string $usuario): array {
+        return $this->enviarPeticion('operadores/estado', [
+            'ficha_username' => $usuario
+        ]);
+    }
+
+    /**
      * Registra un log remoto en el PBX Receptor.
      *
      * @param string $usuario Nombre de usuario.

@@ -84,3 +84,15 @@ Este documento sirve como bitácora para registrar todos los problemas encontrad
 * **Resultado:** `http://172.16.80.240/login` y `/api/ping` respondiendo exitosamente con código `HTTP 200 OK`.
 * **Recomendaciones:** Siempre iniciar el stack completo mediante `docker compose up -d` en el directorio de `pbx-receptor` para preservar las redes compartidas.
 
+### 6. Contenedores de ProyectoFicha Desvinculados del Puerto 80 (`http://172.16.80.239/`)
+* **Fecha:** 21/08/2026
+* **Sistema afectado:** ProyectoFicha (Docker / Apache PHP 8.2)
+* **Archivo o módulo afectado:** Contenedor `ven911_web`, `ProyectoFicha/docker-compose.yml`
+* **Descripción del problema:** No se podía visualizar la interfaz web de ProyectoFicha en `http://172.16.80.239/`.
+* **Síntoma observado:** `curl: (7) Failed to connect to 172.16.80.239:80: Could not connect to server`.
+* **Causa raíz:** El contenedor `ven911_web` había iniciado previamente sin el enlace al puerto 80 del host debido a que la IP `172.16.80.239` no estaba activa al momento del primer boot.
+* **Diagnóstico realizado:** `docker port ven911_web` devolvió vacío.
+* **Solución aplicada:** Ejecución de `docker compose -p pasantiasven911 up -d` en el directorio de `ProyectoFicha` para recrear los contenedores vinculando `172.16.80.239:80:80`.
+* **Resultado:** `http://172.16.80.239/` respondiendo con código `HTTP 200 OK` (Apache/2.4.67 PHP/8.2).
+* **Recomendaciones:** Mantener el parámetro de proyecto `-p pasantiasven911` al recrear los contenedores.
+

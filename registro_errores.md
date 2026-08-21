@@ -72,3 +72,15 @@ Este documento sirve como bitácora para registrar todos los problemas encontrad
 * **Resultado:** Conectividad SSH operativa al 100% (`TcpTestSucceeded: True`).
 * **Recomendaciones:** Asegurar que `sshd` permanezca habilitado en el arranque (`systemctl enable ssh`) y que la interfaz `eno4` conserve su perfil manual estático.
 
+### 5. Falla de Resolución de Nombre de Base de Datos (`getaddrinfo for pbx_db failed`)
+* **Fecha:** 21/08/2026
+* **Sistema afectado:** pbx-receptor (Docker / MariaDB)
+* **Archivo o módulo afectado:** Contenedor `pbx_db_container`, Red `pbx-receptor_pbx_network`
+* **Descripción del problema:** Al acceder a `http://172.16.80.240`, Laravel arrojaba un error 500 `QueryException: getaddrinfo for pbx_db failed: Temporary failure in name resolution`.
+* **Síntoma observado:** Falla al consultar la tabla `sessions` en MariaDB desde `pbx_app_container`.
+* **Causa raíz:** El contenedor de base de datos `pbx_db_container` no estaba enlazado a la red interna `pbx-receptor_pbx_network` tras haber sido iniciado de forma independiente.
+* **Diagnóstico realizado:** `docker inspect` mostró que `pbx_db_container` tenía `"Networks": {}`.
+* **Solución aplicada:** Conexión del contenedor a la red mediante `docker network connect --alias pbx_db pbx-receptor_pbx_network pbx_db_container` y reinicio de `pbx_app_container`.
+* **Resultado:** `http://172.16.80.240/login` y `/api/ping` respondiendo exitosamente con código `HTTP 200 OK`.
+* **Recomendaciones:** Siempre iniciar el stack completo mediante `docker compose up -d` en el directorio de `pbx-receptor` para preservar las redes compartidas.
+
